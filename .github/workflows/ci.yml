@@ -52,7 +52,9 @@ jobs:
         with: {name: distributed-e2e-report, path: reports/local/e2e.json}
       - name: Diagnose failing containers
         if: failure()
-        run: docker compose -f docker-compose.yml -f compose.ci.yml ps
+        run: |
+          docker compose -f docker-compose.yml -f compose.ci.yml ps
+          docker compose -f docker-compose.yml -f compose.ci.yml logs --tail=80 spark-master spark-worker-1 spark-worker-2 worker dispatcher
       - name: Stop test environment
         if: always()
         run: docker compose -f docker-compose.yml -f compose.ci.yml down
