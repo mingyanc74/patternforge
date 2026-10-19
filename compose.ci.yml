@@ -1,0 +1,32 @@
+# Explicit test-only services. Never use this overlay for a public deployment.
+services:
+  web:
+    environment: &test-env
+      LLM_BASE_URL: http://fixtures:8009/v1
+      LLM_API_KEY: ci-fixture-only-not-a-real-key
+      LLM_MODEL: deterministic-ci-fixture
+      S3_ENDPOINT_URL: http://fixtures:5000
+      S3_ALLOW_HTTP: '1'
+      ALLOWED_HOSTS: localhost,127.0.0.1,web,frontend
+    depends_on:
+      fixtures: {condition: service_healthy}
+  worker:
+    environment: *test-env
+    depends_on:
+      fixtures: {condition: service_healthy}
+  fixtures:
+    build:
+      context: .
+      dockerfile: deploy/backend.Dockerfile
+      target: test
+    image: patternforge-test:local
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+    command: [python, /repo/scripts/ci_fixture_server.py]
+    volumes: ["./scripts:/repo/scripts:ro"]
+    ports: ["127.0.0.1:5000:5000"]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8009/health')"]
+      interval: 5s
+      retries: 30

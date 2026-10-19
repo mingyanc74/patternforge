@@ -1,0 +1,16 @@
+Django>=5.2.15,<5.3
+djangorestframework>=3.16,<3.17
+celery[redis]>=5.6.0,<5.7
+redis>=5.2,<7
+psycopg[binary]>=3.2,<3.4
+boto3>=1.35,<2
+cryptography>=45,<51
+httpx>=0.28,<0.29
+jsonschema>=4.23,<5
+pyarrow>=19,<24
+openpyxl>=3.1.5,<3.2
+python-dotenv>=1.0,<2
+gunicorn>=23,<26
+flower>=2.0,<3
+prometheus-client>=0.21,<1
+regex>=2024.11

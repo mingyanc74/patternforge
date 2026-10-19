@@ -1,0 +1,106 @@
+name: patternforge
+x-app: &app
+  build:
+    context: .
+    dockerfile: deploy/backend.Dockerfile
+    target: runtime
+  image: patternforge-app:local
+  env_file: .env
+  environment: &app-env
+    DATA_DIR: /data
+    DATABASE_URL: postgresql://patternforge:${POSTGRES_PASSWORD:?Run scripts/bootstrap.py first}@db:5432/patternforge
+    REDIS_URL: redis://redis:6379/0
+    RESULT_BACKEND_URL: redis://redis:6379/1
+    CACHE_URL: redis://redis:6379/2
+    SPARK_MASTER: spark://spark-master:7077
+    SPARK_DRIVER_HOST: worker
+  volumes: [app-data:/data]
+  restart: unless-stopped
+  init: true
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: patternforge
+      POSTGRES_DB: patternforge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/bootstrap.py first}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U patternforge -d patternforge"]
+      interval: 5s
+      retries: 15
+    restart: unless-stopped
+  redis:
+    image: redis:7.4-alpine
+    command: [redis-server, --appendonly, 'yes', --maxmemory, 512mb, --maxmemory-policy, noeviction]
+    volumes: [redis-data:/data]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      retries: 15
+    restart: unless-stopped
+  migrate:
+    <<: *app
+    command: [python, manage.py, migrate, --noinput]
+    depends_on:
+      db: {condition: service_healthy}
+    restart: 'no'
+  web:
+    <<: *app
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 15s
+      retries: 10
+  spark-master:
+    <<: *app
+    command: [/usr/local/lib/python3.11/site-packages/pyspark/bin/spark-class, org.apache.spark.deploy.master.Master, --host, spark-master, --port, '7077', --webui-port, '8081']
+    environment:
+      SPARK_NO_DAEMONIZE: '1'
+    healthcheck:
+      test: [CMD, python, -c, "import socket; socket.create_connection(('localhost',7077),2).close()"]
+      interval: 5s
+      retries: 20
+  spark-worker-1:
+    <<: *app
+    command: [/usr/local/lib/python3.11/site-packages/pyspark/bin/spark-class, org.apache.spark.deploy.worker.Worker, --cores, '1', --memory, 2g, --webui-port, '8082', spark://spark-master:7077]
+    depends_on:
+      spark-master: {condition: service_healthy}
+  spark-worker-2:
+    <<: *app
+    command: [/usr/local/lib/python3.11/site-packages/pyspark/bin/spark-class, org.apache.spark.deploy.worker.Worker, --cores, '1', --memory, 2g, --webui-port, '8082', spark://spark-master:7077]
+    depends_on:
+      spark-master: {condition: service_healthy}
+  worker:
+    <<: *app
+    command: [celery, -A, config, worker, --loglevel=INFO, --concurrency=1, --prefetch-multiplier=1, -Q, processing, -E]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      spark-master: {condition: service_healthy}
+  dispatcher:
+    <<: *app
+    command: [python, manage.py, dispatch_jobs]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+  flower:
+    <<: *app
+    command: [celery, -A, config, flower, --port=5555]
+    ports: [127.0.0.1:5555:5555]
+    depends_on:
+      redis: {condition: service_healthy}
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/frontend.Dockerfile
+    ports: ["127.0.0.1:${APP_PORT:-8080}:80"]
+    depends_on:
+      web: {condition: service_healthy}
+    restart: unless-stopped
+volumes:
+  postgres-data:
+  redis-data:
+  app-data:

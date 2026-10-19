@@ -1,0 +1,1 @@
+{"python.defaultInterpreterPath":"${workspaceFolder}/.venv/Scripts/python.exe","python.testing.pytestEnabled":true,"python.testing.pytestArgs":["backend/tests"],"files.exclude":{"**/__pycache__":true},"search.exclude":{"data":true,"frontend/node_modules":true,".venv":true},"editor.tabSize":2,"[python]":{"editor.tabSize":4}}

@@ -1,0 +1,11 @@
+{
+  "version":"2.0.0",
+  "tasks":[
+    {"label":"PatternForge: bootstrap","type":"shell","command":"python scripts/bootstrap.py","problemMatcher":[]},
+    {"label":"PatternForge: full stack (Docker)","type":"shell","command":"docker compose up --build","problemMatcher":[],"isBackground":true},
+    {"label":"PatternForge: backend (local)","type":"process","command":"${workspaceFolder}/.venv/Scripts/python.exe","args":["scripts/local_backend.py"],"problemMatcher":[]},
+    {"label":"PatternForge: frontend","type":"shell","command":"npm run dev","options":{"cwd":"${workspaceFolder}/frontend"},"problemMatcher":[]},
+    {"label":"PatternForge: backend tests","type":"process","command":"${workspaceFolder}/.venv/Scripts/python.exe","args":["-m","pytest","-m","not spark"],"group":"test","problemMatcher":[]},
+    {"label":"PatternForge: frontend check","type":"shell","command":"npm run build","options":{"cwd":"${workspaceFolder}/frontend"},"group":"build","problemMatcher":[]}
+  ]
+}
