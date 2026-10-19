@@ -128,3 +128,30 @@ def test_cancelled_outbox_rows_do_not_starve_new_jobs(saved_connection, mocker):
     publish = mocker.patch("core.tasks.process_job.apply_async")
     assert dispatch_pending() == 1
     publish.assert_called_once_with(args=[str(waiting.id)], task_id=str(waiting.id), retry=False)
+
+
+def test_cleanup_reclaims_crash_leftovers_but_preserves_live_results_and_active_jobs(
+    saved_connection, data_dir
+):
+    from core.tasks import cleanup_abandoned_attempts
+
+    completed = queued(saved_connection)
+    completed.status = Job.Status.SUCCESS
+    completed.finished_at = timezone.now() - timedelta(hours=25)
+    root = data_dir / "jobs" / str(completed.id)
+    published = root / str(uuid.uuid4())
+    abandoned = root / str(uuid.uuid4())
+    unknown = root / "unrecognized-folder"
+    for folder in [published, abandoned, unknown]:
+        folder.mkdir(parents=True)
+    completed.manifest = str(published / "manifest.json")
+    completed.save()
+    active = queued(saved_connection)
+    active.status = Job.Status.RUNNING
+    active.finished_at = None
+    active.save()
+    active_folder = data_dir / "jobs" / str(active.id) / str(uuid.uuid4())
+    active_folder.mkdir(parents=True)
+    cleanup_abandoned_attempts(timezone.now())
+    assert published.exists() and active_folder.exists() and unknown.exists()
+    assert not abandoned.exists()

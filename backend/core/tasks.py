@@ -308,3 +308,28 @@ def maintenance():
     S3Connection.objects.filter(Q(expires_at__lt=now) | Q(disconnected_at__isnull=False)).exclude(
         id__in=active_connections.values("connection_id")
     ).exclude(ciphertext="").update(ciphertext="")
+    cleanup_abandoned_attempts(now)
+
+
+def cleanup_abandoned_attempts(now):
+    """Reclaim crash leftovers after retention; never touch active jobs or a published live result."""
+    old = Job.objects.filter(
+        status__in=Job.TERMINAL, finished_at__lt=now - timedelta(hours=settings.TEMP_TTL_HOURS)
+    ).only("id", "manifest")
+    for job in old.iterator(chunk_size=100):
+        root = contained_path(settings.DATA_DIR / "jobs" / str(job.id))
+        expected = (settings.DATA_DIR / "jobs" / str(job.id)).absolute()
+        if root != expected or not root.is_dir() or root.is_symlink():
+            continue
+        published = contained_path(job.manifest).parent if job.manifest else None
+        for child in root.iterdir():
+            if not child.is_dir() or child.is_symlink():
+                continue
+            try:
+                uuid.UUID(child.name)
+            except ValueError:
+                continue
+            target = contained_path(child)
+            if target.parent != root or target == published:
+                continue
+            shutil.rmtree(target, ignore_errors=True)

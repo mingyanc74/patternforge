@@ -56,6 +56,7 @@ services:
       retries: 10
   spark-master:
     <<: *app
+    env_file: []
     command: [/usr/local/lib/python3.11/site-packages/pyspark/bin/spark-class, org.apache.spark.deploy.master.Master, --host, spark-master, --port, '7077', --webui-port, '8081']
     environment:
       SPARK_NO_DAEMONIZE: '1'
@@ -65,11 +66,17 @@ services:
       retries: 20
   spark-worker-1:
     <<: *app
+    env_file: []
+    environment:
+      SPARK_NO_DAEMONIZE: '1'
     command: [/usr/local/lib/python3.11/site-packages/pyspark/bin/spark-class, org.apache.spark.deploy.worker.Worker, --cores, '1', --memory, 2g, --work-dir, /data/spark-worker-1, --webui-port, '8082', spark://spark-master:7077]
     depends_on:
       spark-master: {condition: service_healthy}
   spark-worker-2:
     <<: *app
+    env_file: []
+    environment:
+      SPARK_NO_DAEMONIZE: '1'
     command: [/usr/local/lib/python3.11/site-packages/pyspark/bin/spark-class, org.apache.spark.deploy.worker.Worker, --cores, '1', --memory, 2g, --work-dir, /data/spark-worker-2, --webui-port, '8082', spark://spark-master:7077]
     depends_on:
       spark-master: {condition: service_healthy}
