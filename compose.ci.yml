@@ -25,7 +25,7 @@ services:
       DATA_DIR: /data
     command: [python, /repo/scripts/ci_fixture_server.py]
     volumes: ["./scripts:/repo/scripts:ro"]
-    ports: ["127.0.0.1:5000:5000"]
+    ports: ["127.0.0.1:5000:5000", "127.0.0.1:8009:8009"]
     healthcheck:
       test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8009/health')"]
       interval: 5s

@@ -4,6 +4,9 @@ import argparse
 import csv
 import io
 import json
+import os
+import platform
+import sys
 import time
 from pathlib import Path
 
@@ -16,10 +19,31 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://localhost:8080")
     parser.add_argument("--s3-url", default="http://localhost:5000")
+    parser.add_argument("--cluster-url", default="http://localhost:8009/cluster")
     parser.add_argument("--rows", type=int, default=1000)
     parser.add_argument("--report", type=Path, default=Path("reports/local/e2e.json"))
     args = parser.parse_args()
+    if args.rows < 1:
+        parser.error("rows must be positive")
     started = time.monotonic()
+
+    def cluster():
+        response = requests.get(args.cluster_url, timeout=5)
+        response.raise_for_status()
+        return response.json()
+
+    for _ in range(120):
+        try:
+            if (
+                requests.get(args.base_url + "/api/health", timeout=5).json()["status"] == "ready"
+                and cluster()["alive_workers"] >= 2
+            ):
+                break
+        except (requests.RequestException, ValueError, KeyError):
+            pass
+        time.sleep(1)
+    else:
+        raise AssertionError("The application did not report ready processing services.")
     s3 = boto3.client(
         "s3",
         endpoint_url=args.s3_url,
@@ -31,10 +55,23 @@ def main():
     s3.create_bucket(Bucket=bucket)
     stream = io.StringIO(newline="")
     writer = csv.writer(stream)
-    writer.writerow(["ID", "Name", "Email", "Description"])
+    writer.writerow(
+        ["ID", "Name", "Email", "Description", "City", "Country", "Phone", "Status", "Date", "Notes"]
+    )
     for i in range(args.rows):
         writer.writerow(
-            [str(i).zfill(8), f"  USER   {i}  ", f"user{i}@example.com", f"Order ORD-{i} shipped"]
+            [
+                str(i).zfill(8),
+                f"  USER   {i}  ",
+                f"user{i}@example.com",
+                f"Order ORD-{i} shipped",
+                "Sydney",
+                "AU",
+                "+61 400 123 456",
+                "active",
+                "2026-10-19",
+                "Customer record",
+            ]
         )
     s3.put_object(Bucket=bucket, Key="inputs/customers.csv", Body=stream.getvalue().encode())
     book = Workbook()
@@ -47,7 +84,7 @@ def main():
     s3.put_object(Bucket=bucket, Key="inputs/sample.xlsx", Body=excel.getvalue())
     session = requests.Session()
     csrf = session.get(args.base_url + "/api/bootstrap", timeout=10).json()["csrf_token"]
-    session.headers.update({"X-CSRFToken": csrf})
+    session.headers.update({"X-CSRFToken": csrf, "Origin": args.base_url.rstrip("/")})
 
     def request(method, path, body=None, params=None, expected=200):
         response = session.request(
@@ -106,7 +143,11 @@ def main():
         page = request("GET", "/jobs/" + finished["id"] + "/results", params={"limit": 25})
         assert page["total_rows"] == args.rows and len(page["rows"]) == min(25, args.rows)
         assert finished["metadata"]["partitions"] >= 2
+        assert finished["metadata"]["executor_count"] >= 2, "The job must actually use two remote executors."
+        assert sum(finished["metadata"]["changed_cells"].values()) == args.rows
+        assert finished["metadata"]["cache_hit"] is False
         for row in page["rows"]:
+            assert row["City"] == "Sydney" and row["Status"] == "active"
             if operation == "regex_replace":
                 assert row["Email"] == "$REDACTED"
             elif operation == "regex_extract":
@@ -127,6 +168,7 @@ def main():
                 "row_count": args.rows,
                 "spark_seconds": finished["metadata"].get("spark_seconds"),
                 "partitions": finished["metadata"]["partitions"],
+                "executor_count": finished["metadata"]["executor_count"],
             }
         )
     excel_config = {"connection_id": connection["id"], "source_key": "inputs/sample.xlsx"}
@@ -136,17 +178,83 @@ def main():
         request("POST", "/files/inspect", {**excel_config, "sheet": "Customers"}, expected=202)["id"]
     )
     assert selected["metadata"]["preview"] == [{"ID": "001", "Email": "alice@example.com"}]
+    excel_job = wait(
+        request(
+            "POST",
+            "/jobs",
+            {
+                **excel_config,
+                "sheet": "Customers",
+                "inspection_id": selected["id"],
+                "operation": "regex_replace",
+                "prompt": "Find email addresses",
+                "target_columns": ["Email"],
+                "replacement": "REDACTED",
+            },
+            expected=202,
+        )["id"]
+    )
+    assert excel_job["metadata"]["cache_hit"] is True
+    excel_page = request("GET", "/jobs/" + excel_job["id"] + "/results")
+    assert excel_page["rows"] == [{"ID": "001", "Email": "REDACTED"}]
     other = requests.Session()
     assert other.get(args.base_url + "/api/jobs/" + jobs[0]["job_id"], timeout=10).status_code == 404
-    cancelled = request("POST", "/files/inspect", input_config, expected=202)
+    cancelled = request(
+        "POST",
+        "/jobs",
+        {
+            **input_config,
+            "inspection_id": inspection["id"],
+            "operation": "regex_replace",
+            "prompt": "Find email addresses",
+            "target_columns": ["Email"],
+            "replacement": "CANCEL-ME",
+        },
+        expected=202,
+    )
+    application_name = "patternforge-" + cancelled["id"]
+    deadline = time.monotonic() + 120
+    while time.monotonic() < deadline:
+        if application_name in cluster()["active_application_names"]:
+            break
+        status = request("GET", "/jobs/" + cancelled["id"])
+        assert status["status"] not in {"SUCCESS", "FAILED", "CANCELLED"}, (
+            "The cancellation test did not observe a running Spark application."
+        )
+        time.sleep(0.25)
+    else:
+        raise AssertionError("The Spark application never became active for the cancellation test.")
+    cancel_started = time.monotonic()
     cancel = request("POST", "/jobs/" + cancelled["id"] + "/cancel")
     assert cancel["cancel_requested"]
+    while time.monotonic() - cancel_started < 60:
+        status = request("GET", "/jobs/" + cancelled["id"])
+        if status["status"] == "CANCELLED" and application_name not in cluster()["active_application_names"]:
+            break
+        time.sleep(0.5)
+    else:
+        raise AssertionError("Cancellation did not stop the actual Spark application within 60 seconds.")
     report = {
         "status": "passed",
         "fixture_notice": "S3 and LLM are deterministic test fixtures; Celery, Redis, PostgreSQL and Spark are real.",
         "rows_per_operation": args.rows,
+        "columns": 10,
+        "source_bytes": s3.head_object(Bucket=bucket, Key="inputs/customers.csv")["ContentLength"],
+        "environment": {
+            "platform": platform.platform(),
+            "python": sys.version.split()[0],
+            "host_logical_cpus": os.cpu_count(),
+            "spark": "3.5.8",
+            "workers": 2,
+            "executor_cores": 1,
+            "executor_memory": "1g",
+            "driver_memory": "1g",
+        },
         "jobs": jobs,
-        "excel": "passed",
+        "excel": "inspect-and-transform-passed",
+        "real_redis_plan_cache": "passed",
+        "running_cancellation": "spark-application-stopped",
+        "cancellation_seconds": round(time.monotonic() - cancel_started, 2),
         "isolation": "passed",
         "seconds": round(time.monotonic() - started, 2),
     }

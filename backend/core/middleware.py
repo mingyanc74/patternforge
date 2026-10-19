@@ -7,6 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 class SafeErrorMiddleware(MiddlewareMixin):
+    def process_response(self, request, response):
+        if request.path.startswith("/api/"):
+            response["Cache-Control"] = "no-store"
+        return response
+
     def process_exception(self, request, exception):
         if request.path.startswith("/api/"):
             logger.error("Unhandled API error: %s", type(exception).__name__)

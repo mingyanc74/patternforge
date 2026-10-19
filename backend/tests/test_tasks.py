@@ -110,3 +110,21 @@ def test_stale_worker_recovers_with_invalidated_lease(saved_connection, mocker):
     job.refresh_from_db()
     assert job.status == Job.Status.QUEUED and job.lease is None
     assert Outbox.objects.get(job=job).sent_at is None
+
+
+def test_cancelled_outbox_rows_do_not_starve_new_jobs(saved_connection, mocker):
+    old_jobs = [
+        Job(
+            owner=saved_connection.owner,
+            connection=saved_connection,
+            source_key="old.csv",
+            status=Job.Status.CANCELLED,
+        )
+        for _ in range(51)
+    ]
+    Job.objects.bulk_create(old_jobs)
+    Outbox.objects.bulk_create([Outbox(job=job, available_at=timezone.now()) for job in old_jobs])
+    waiting = queued(saved_connection)
+    publish = mocker.patch("core.tasks.process_job.apply_async")
+    assert dispatch_pending() == 1
+    publish.assert_called_once_with(args=[str(waiting.id)], task_id=str(waiting.id), retry=False)

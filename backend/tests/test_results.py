@@ -75,3 +75,32 @@ def test_zero_rows_are_valid_with_schema(client, result_job):
     response = client.get(f"/api/jobs/{result_job.id}/results")
     assert response.status_code == 200 and response.data["rows"] == []
     assert response.data["total_rows"] == 0 and len(response.data["columns"]) == 2
+
+
+def test_wide_pages_stop_at_byte_budget_without_skipping_rows(client, result_job):
+    from pathlib import Path
+
+    work = Path(result_job.manifest).parent
+    file = work / "parquet" / "part-wide.parquet"
+    for old in (work / "parquet").glob("*.parquet"):
+        old.unlink()
+    table = pa.table({"ID": list(map(str, range(50))), "Email": ["x" * 50000] * 50})
+    pq.write_table(table, file, row_group_size=10)
+    result_job.manifest = str(
+        build_manifest(
+            work,
+            {
+                "columns": [{"name": "ID", "type": "string"}, {"name": "Email", "type": "string"}],
+                "row_count": 50,
+            },
+            "wide-version",
+        )
+    )
+    result_job.save()
+    first = client.get(f"/api/jobs/{result_job.id}/results", {"limit": 500})
+    assert first.status_code == 200 and 0 < len(first.data["rows"]) < 50
+    assert len(first.content) < 2 * 1024**2 + 10000
+    second = client.get(
+        f"/api/jobs/{result_job.id}/results", {"limit": 500, "cursor": first.data["next_cursor"]}
+    )
+    assert [r["ID"] for r in first.data["rows"] + second.data["rows"]] == list(map(str, range(50)))

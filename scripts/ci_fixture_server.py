@@ -3,6 +3,7 @@
 import json
 import subprocess
 import sys
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
@@ -11,6 +12,24 @@ class ModelFixture(BaseHTTPRequestHandler):
         pass
 
     def do_GET(self):
+        if self.path == "/cluster":
+            try:
+                with urllib.request.urlopen("http://spark-master:8081/json/", timeout=3) as source:
+                    state = json.load(source)
+                body = json.dumps(
+                    {
+                        "alive_workers": state.get("aliveworkers", 0),
+                        "active_application_names": [item["name"] for item in state.get("activeapps", [])],
+                    }
+                ).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception:
+                self.send_response(503)
+                self.end_headers()
+            return
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"fixture-ready")

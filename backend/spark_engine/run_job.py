@@ -283,6 +283,9 @@ def run(spec_path):
                 "columns": [{"name": name, "type": "string"} for name in result.columns],
                 "application_id": spark.sparkContext.applicationId,
                 "partitions": df.rdd.getNumPartitions(),
+                "executor_count": max(
+                    0, int(spark.sparkContext._jsc.sc().getExecutorMemoryStatus().size()) - 1
+                ),
                 "spark_seconds": round(time.monotonic() - started, 3),
             },
         )
