@@ -263,3 +263,17 @@ def test_history_expired_results_are_distinct_from_failed_jobs(client, saved_con
 )
 def test_history_rejects_invalid_query(client, query):
     assert client.get("/api/jobs", query).status_code == 400
+
+
+def test_production_health_uses_trusted_proxy_without_disabling_redirect(client, settings, mocker):
+    settings.SECURE_SSL_REDIRECT = True
+    settings.SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    settings.ALLOWED_HOSTS = ["testserver", "localhost"]
+    settings.SPARK_MASTER = "local[2]"
+    mocker.patch("core.views.redis.Redis.from_url")
+    insecure = client.get("/api/health", HTTP_HOST="localhost")
+    assert insecure.status_code == 301
+    assert insecure["Location"] == "https://localhost/api/health"
+    internal = client.get("/api/health", HTTP_HOST="localhost", HTTP_X_FORWARDED_PROTO="https")
+    assert internal.status_code == 200
+    assert "services" in internal.data

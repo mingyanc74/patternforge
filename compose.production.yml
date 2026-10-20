@@ -6,6 +6,12 @@ services:
       SECURE_SSL_REDIRECT: '1'
       ALLOWED_HOSTS: ${DOMAIN},localhost,web
       CSRF_TRUSTED_ORIGINS: https://${DOMAIN}
+    healthcheck:
+      # Internal HTTP probe supplies the trusted gateway's HTTPS indication.
+      # External HTTPS redirects remain enabled for the application.
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://localhost:8000/api/health', headers={'X-Forwarded-Proto':'https'}))"]
+      interval: 15s
+      retries: 10
   gateway:
     image: caddy:2-alpine
     ports: ['80:80', '443:443', '443:443/udp']
