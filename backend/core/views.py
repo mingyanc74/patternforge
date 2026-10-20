@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.sessions.models import Session
 from django.core import signing
 from django.db import IntegrityError, connection, transaction
+from django.db.models import Q
 from django.http import HttpResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
@@ -46,6 +47,10 @@ def serialize_job(job, full=True):
         "kind": job.kind,
         "source_key": job.source_key,
         "connection_id": str(job.connection_id),
+        "bucket": job.connection.bucket,
+        "region": job.connection.region,
+        "operation": job.config.get("operation"),
+        "sheet": job.config.get("sheet", ""),
         "status": job.status,
         "stage": job.stage,
         "progress": job.progress,
@@ -347,11 +352,47 @@ class Inspect(SessionView):
 
 class Jobs(SessionView):
     def get(self, request):
+        params = request.query_params
+        try:
+            page, limit = int(params.get("page", "1")), int(params.get("limit", "50"))
+            if not 1 <= page <= 100000 or not 1 <= limit <= 50:
+                raise ValueError
+        except ValueError:
+            raise AppError(
+                "INVALID_PAGINATION", "Choose a valid page and a page size from 1 to 50."
+            ) from None
+        jobs = Job.objects.filter(owner=owner(request)).select_related("connection")
+        kind = params.get("kind", "")
+        if kind:
+            if kind not in {"inspect", "transform"}:
+                raise AppError("INVALID_FILTER", "Choose a valid job kind.")
+            jobs = jobs.filter(kind=kind)
+        status = params.get("status", "")
+        if status == "expired":
+            jobs = jobs.filter(status=Job.Status.SUCCESS, kind="transform").filter(
+                Q(result_expires_at__lte=timezone.now()) | Q(manifest="")
+            )
+        elif status:
+            if status not in Job.Status.values:
+                raise AppError("INVALID_FILTER", "Choose a valid job status.")
+            jobs = jobs.filter(status=status)
+        query = params.get("search", "").strip()
+        if len(query) > 128:
+            raise AppError("INVALID_FILTER", "Search text must be at most 128 characters.")
+        if query:
+            jobs = jobs.filter(Q(source_key__icontains=query) | Q(id__icontains=query.replace("-", "")))
+        count = jobs.count()
+        start = (page - 1) * limit
         return Response(
             {
                 "jobs": [
-                    serialize_job(job, full=False) for job in Job.objects.filter(owner=owner(request))[:50]
-                ]
+                    serialize_job(job, full=False)
+                    for job in jobs.order_by("-created_at", "-id")[start : start + limit]
+                ],
+                "total": count,
+                "page": page,
+                "page_size": limit,
+                "has_next": start + limit < count,
             }
         )
 

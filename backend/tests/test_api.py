@@ -191,3 +191,75 @@ def test_s3_permission_error_is_clear_and_redacted(client, mocker):
 def test_source_fingerprint_includes_object_version(bucket):
     result = fingerprint(bucket, "user-owned-bucket", "customers.csv")
     assert set(result) == {"etag", "size", "modified", "version_id"}
+
+
+def test_history_has_server_side_search_filter_pagination_and_safe_summary(client, saved_connection):
+    for index in range(7):
+        Job.objects.create(
+            owner=saved_connection.owner,
+            connection=saved_connection,
+            kind="transform",
+            source_key=f"reports/customer-{index}.csv",
+            status="SUCCESS",
+            config={"operation": "regex_replace", "sheet": "", "prompt": "private instruction"},
+            manifest="published/result.json",
+            result_expires_at=timezone.now() + timedelta(hours=1),
+        )
+    Job.objects.create(
+        owner=saved_connection.owner,
+        connection=saved_connection,
+        kind="inspect",
+        source_key="not-a-transform.csv",
+    )
+    url = "/api/jobs"
+    first = client.get(url, {"kind": "transform", "limit": 5})
+    assert first.status_code == 200 and first.data["total"] == 7
+    assert len(first.data["jobs"]) == 5 and first.data["has_next"] is True
+    second = client.get(url, {"kind": "transform", "limit": 5, "page": 2})
+    assert len(second.data["jobs"]) == 2 and second.data["has_next"] is False
+    assert not {job["id"] for job in first.data["jobs"]} & {job["id"] for job in second.data["jobs"]}
+    entry = first.data["jobs"][0]
+    assert entry["operation"] == "regex_replace" and entry["bucket"] == saved_connection.bucket
+    assert "config" not in entry and "private instruction" not in str(first.data)
+    assert client.get(url, {"search": entry["id"]}).data["total"] == 1
+    assert client.get(url, {"search": "customer-2.csv"}).data["total"] == 1
+    assert client.get(url, {"status": "FAILED"}).data["total"] == 0
+    other = APIClient()
+    other.get("/api/bootstrap")
+    assert other.get(url, {"kind": "transform"}).data["total"] == 0
+
+
+def test_history_expired_results_are_distinct_from_failed_jobs(client, saved_connection):
+    for status, manifest, expires in [
+        ("SUCCESS", "published.json", timezone.now() - timedelta(seconds=1)),
+        ("SUCCESS", "", timezone.now() + timedelta(hours=1)),
+        ("SUCCESS", "live.json", timezone.now() + timedelta(hours=1)),
+        ("FAILED", "", None),
+    ]:
+        Job.objects.create(
+            owner=saved_connection.owner,
+            connection=saved_connection,
+            kind="transform",
+            source_key="source.csv",
+            status=status,
+            manifest=manifest,
+            result_expires_at=expires,
+        )
+    expired = client.get("/api/jobs", {"status": "expired", "kind": "transform"})
+    assert expired.status_code == 200 and expired.data["total"] == 2
+    assert all(job["status"] == "SUCCESS" for job in expired.data["jobs"])
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        {"page": 0},
+        {"limit": 51},
+        {"limit": "bad"},
+        {"status": "unknown"},
+        {"kind": "other"},
+        {"search": "a" * 129},
+    ],
+)
+def test_history_rejects_invalid_query(client, query):
+    assert client.get("/api/jobs", query).status_code == 400

@@ -17,6 +17,10 @@ export type Job = {
   kind: "inspect" | "transform";
   source_key: string;
   connection_id: string;
+  bucket?: string;
+  region?: string;
+  operation?: Operation;
+  sheet?: string;
   status: "QUEUED" | "RUNNING" | "SUCCESS" | "FAILED" | "CANCELLED";
   stage: string;
   progress: number;
@@ -47,6 +51,13 @@ export type Job = {
     spark_seconds?: number;
     partitions?: number;
   };
+};
+export type JobList = {
+  jobs: Job[];
+  total: number;
+  page: number;
+  page_size: number;
+  has_next: boolean;
 };
 export type ResultPage = {
   rows: Record<string, unknown>[];
@@ -149,7 +160,21 @@ export const api = {
       body: JSON.stringify(body),
       headers: { "Idempotency-Key": key },
     }),
-  jobs: () => request<{ jobs: Job[] }>("/jobs"),
+  jobs: (
+    filters: {
+      page?: number;
+      limit?: number;
+      kind?: string;
+      status?: string;
+      search?: string;
+    } = {},
+  ) =>
+    request<JobList>(
+      "/jobs?" +
+        new URLSearchParams(
+          Object.entries(filters).map(([key, value]) => [key, String(value)]),
+        ),
+    ),
   job: (id: string) => request<Job>(`/jobs/${id}`),
   cancel: (id: string) =>
     request<Job>(`/jobs/${id}/cancel`, { method: "POST" }),

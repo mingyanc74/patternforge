@@ -1,387 +1,191 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ArrowLeft,
   ArrowRight,
-  ArrowUpRight,
-  BookOpen,
   Check,
-  CheckCircle2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Circle,
+  CircleAlert,
   CircleHelp,
   Clock3,
-  Cloud,
-  Code2,
   Copy,
   Database,
   FileSpreadsheet,
-  FolderOpen,
-  Layers3,
-  LayoutDashboard,
-  ListChecks,
+  FolderClosed,
+  History,
+  Info,
+  Layers2,
   LoaderCircle,
   LockKeyhole,
-  Play,
-  PlugZap,
+  Plus,
   RefreshCw,
   Search,
   ShieldCheck,
-  Sparkles,
   Square,
-  Terminal,
-  WandSparkles,
+  Table2,
   X,
-  XCircle,
 } from "lucide-react";
 import { api, RequestError } from "./api";
 import type {
   Bootstrap,
-  Column,
   Connection,
   Job,
   Operation,
   ResultPage,
   SourceFile,
 } from "./api";
-import { active, filename, formatBytes, stageLabels } from "./utils";
+import {
+  active,
+  dateLabel,
+  durationLabel,
+  filename,
+  formatBytes,
+  operationLabel,
+  resultExpired,
+  stageLabels,
+} from "./utils";
+import { DataTable } from "./components/DataTable";
+import { JobsHistory } from "./components/JobsHistory";
+import { Modal } from "./components/Modal";
+import { Status } from "./components/Status";
 
-const operations: {
-  id: Operation;
-  title: string;
-  description: string;
-  icon: typeof WandSparkles;
-}[] = [
-  {
-    id: "regex_replace",
-    title: "Find & replace",
-    description: "Replace patterns in your text",
-    icon: WandSparkles,
-  },
-  {
-    id: "regex_extract",
-    title: "Extract a field",
-    description: "Turn a pattern into a new column",
-    icon: ArrowUpRight,
-  },
-  {
-    id: "normalize",
-    title: "Clean & standardize",
-    description: "Make text consistent",
-    icon: ListChecks,
-  },
+type Screen = "connection" | "files" | "editor" | "job" | "results" | "history";
+type Dialog = "help" | "review" | "cancel" | "disconnect" | "discard" | null;
+const stages = [
+  "VALIDATING",
+  "GENERATING_PLAN",
+  "VALIDATING_RULE",
+  "READING",
+  "TRANSFORMING",
+  "WRITING",
 ];
-const suggestions: Record<Operation, { label: string; text: string }[]> = {
-  regex_replace: [
-    { label: "Email addresses", text: "Find all email addresses." },
-    {
-      label: "Phone numbers",
-      text: "Find phone numbers including optional country codes.",
-    },
-    {
-      label: "Order IDs",
-      text: "Find order IDs starting with ORD- followed by digits.",
-    },
-  ],
-  regex_extract: [
-    {
-      label: "Order IDs",
-      text: "Extract the first order ID starting with ORD- followed by digits.",
-    },
-    { label: "Email addresses", text: "Extract the first email address." },
-  ],
-  normalize: [
-    {
-      label: "Clean names",
-      text: "Trim leading and trailing whitespace and collapse consecutive whitespace.",
-    },
-    {
-      label: "Lowercase text",
-      text: "Trim whitespace, collapse repeated whitespace, then convert to lowercase.",
-    },
-    {
-      label: "Uppercase codes",
-      text: "Trim whitespace and convert to uppercase.",
-    },
-  ],
+const examples: Record<Operation, string> = {
+  regex_replace: "Find email addresses",
+  regex_extract: "Extract order IDs beginning with ORD- followed by digits",
+  normalize:
+    "Trim spaces, collapse repeated whitespace, then convert to lowercase",
 };
 
-function usePolling(
+function useJobPolling(
   job: Job | null,
-  setJob: (job: Job) => void,
+  update: (job: Job) => void,
   onError: (message: string) => void,
 ) {
   useEffect(() => {
     if (!active(job)) return;
-    let stopped = false;
+    let stopped = false,
+      failures = 0;
     let timer: ReturnType<typeof setTimeout>;
-    let failures = 0;
-    const poll = async () => {
+    async function poll() {
       try {
-        const result = await api.job(job!.id);
+        const next = await api.job(job!.id);
         if (stopped) return;
+        update(next);
         failures = 0;
         onError("");
-        setJob(result);
-        if (active(result)) timer = setTimeout(poll, 2000);
+        if (active(next)) timer = setTimeout(poll, 2000);
       } catch (error) {
         if (stopped) return;
-        failures++;
         onError(
-          error instanceof Error ? error.message : "Connection interrupted.",
+          error instanceof Error
+            ? error.message
+            : "Connection interrupted. Your job continues on the server.",
         );
-        timer = setTimeout(poll, Math.min(15000, 2000 * 2 ** failures));
+        timer = setTimeout(poll, Math.min(15000, 2000 * 2 ** ++failures));
       }
-    };
+    }
     timer = setTimeout(poll, 1000);
     return () => {
       stopped = true;
       clearTimeout(timer);
     };
-  }, [job?.id, job?.status, setJob, onError]);
-}
-
-function Status({ job }: { job: Job }) {
-  return (
-    <span className={`status ${job.status.toLowerCase()}`}>
-      {active(job) ? (
-        <LoaderCircle size={12} className="spin" />
-      ) : job.status === "SUCCESS" ? (
-        <Check size={12} />
-      ) : null}
-      {job.cancel_requested && active(job)
-        ? "Cancelling"
-        : job.stage === "RETRYING"
-          ? "Retrying"
-          : {
-              QUEUED: "Queued",
-              RUNNING: "Running",
-              SUCCESS: "Complete",
-              FAILED: "Failed",
-              CANCELLED: "Cancelled",
-            }[job.status]}
-    </span>
-  );
-}
-
-function DataTable({
-  rows,
-  columns,
-  selected = [],
-}: {
-  rows: Record<string, unknown>[];
-  columns: Column[];
-  selected?: string[];
-}) {
-  return (
-    <div className="table-scroll">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th className="row-number">#</th>
-            {columns.map((column) => (
-              <th key={column.name}>
-                <span className="type-mark">Aa</span>
-                {column.name}
-                {selected.includes(column.name) && (
-                  <span className="column-dot" title="Target column" />
-                )}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={index}>
-              <td className="row-number">{index + 1}</td>
-              {columns.map((column) => (
-                <td
-                  key={column.name}
-                  title={
-                    row[column.name] == null ? "null" : String(row[column.name])
-                  }
-                >
-                  {row[column.name] == null ? (
-                    <span className="null-value">null</span>
-                  ) : row[column.name] === "" ? (
-                    <span className="null-value">empty</span>
-                  ) : (
-                    String(row[column.name]).slice(0, 250)
-                  )}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  }, [job?.id, job?.status, update, onError]);
 }
 
 export default function App() {
-  const [boot, setBoot] = useState<Bootstrap | null>(null);
-  const [ready, setReady] = useState(false);
-  const [services, setServices] = useState<Record<string, boolean>>({});
-  const [view, setView] = useState<"workspace" | "activity">("workspace");
-  const [guide, setGuide] = useState(false);
-  const [error, setError] = useState("");
-  const [network, setNetwork] = useState("");
-  const [connection, setConnection] = useState<Connection | null>(null);
-  const [connections, setConnections] = useState<Connection[]>([]);
+  const [screen, setScreen] = useState<Screen>("history");
+  const [boot, setBoot] = useState<Bootstrap | null>(null),
+    [services, setServices] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState(""),
+    [network, setNetwork] = useState(""),
+    [initializing, setInitializing] = useState(true);
+  const [connections, setConnections] = useState<Connection[]>([]),
+    [connection, setConnection] = useState<Connection | null>(null);
   const [credentials, setCredentials] = useState({
-    bucket: "",
-    region: "us-east-1",
     access_key: "",
     secret_key: "",
     session_token: "",
+    bucket: "",
+    region: "us-east-1",
   });
-  const [connecting, setConnecting] = useState(false);
-  const [advanced, setAdvanced] = useState(false);
-  const [files, setFiles] = useState<SourceFile[]>([]);
-  const [prefix, setPrefix] = useState("");
-  const [fileCursor, setFileCursor] = useState<string | null>(null);
-  const [loadingFiles, setLoadingFiles] = useState(false);
-  const [selected, setSelected] = useState<SourceFile | null>(null);
-  const [sheet, setSheet] = useState("");
-  const [delimiter, setDelimiter] = useState(",");
-  const [encoding, setEncoding] = useState("UTF-8");
-  const [inspection, setInspection] = useState<Job | null>(null);
-  const [operation, setOperation] = useState<Operation>("regex_replace");
-  const [prompt, setPrompt] = useState("");
-  const [columns, setColumns] = useState<string[]>([]);
-  const [replacement, setReplacement] = useState("REDACTED");
-  const [newColumn, setNewColumn] = useState("extracted_value");
-  const [job, setJob] = useState<Job | null>(null);
-  const [history, setHistory] = useState<Job[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [page, setPage] = useState<ResultPage | null>(null);
-  const [cursors, setCursors] = useState<string[]>([""]);
-  const [pageNumber, setPageNumber] = useState(0);
-  const [pageSize, setPageSize] = useState(100);
-  const [loadingPage, setLoadingPage] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const submitKey = useRef(crypto.randomUUID());
-  const currentJobId = useRef<string | undefined>(undefined);
+  const [connecting, setConnecting] = useState(false),
+    [showSecret, setShowSecret] = useState(false);
+  const [files, setFiles] = useState<SourceFile[]>([]),
+    [prefix, setPrefix] = useState("");
+  const [fileCursor, setFileCursor] = useState<string | null>(null),
+    [loadingFiles, setLoadingFiles] = useState(false);
+  const [selected, setSelected] = useState<SourceFile | null>(null),
+    [sheet, setSheet] = useState(""),
+    [sheets, setSheets] = useState<string[]>([]);
+  const [delimiter, setDelimiter] = useState(","),
+    [encoding, setEncoding] = useState("UTF-8");
+  const [inspection, setInspection] = useState<Job | null>(null),
+    [job, setJob] = useState<Job | null>(null);
+  const [operation, setOperation] = useState<Operation>("regex_replace"),
+    [columns, setColumns] = useState<string[]>([]);
+  const [prompt, setPrompt] = useState(""),
+    [replacement, setReplacement] = useState(""),
+    [removeMatches, setRemoveMatches] = useState(false),
+    [newColumn, setNewColumn] = useState("");
+  const [submitting, setSubmitting] = useState(false),
+    [jobCount, setJobCount] = useState(0);
+  const [page, setPage] = useState<ResultPage | null>(null),
+    [cursors, setCursors] = useState<string[]>([""]),
+    [pageNumber, setPageNumber] = useState(0),
+    [pageSize, setPageSize] = useState(100),
+    [loadingPage, setLoadingPage] = useState(false);
+  const [dataView, setDataView] = useState<"result" | "original">("result");
+  const [pendingReuse, setPendingReuse] = useState<Job | null>(null),
+    [reusedFrom, setReusedFrom] = useState("");
+  const [dialog, setDialog] = useState<Dialog>(null),
+    [cancelTarget, setCancelTarget] = useState<Job | null>(null),
+    [toast, setToast] = useState("");
+  const submitKey = useRef(crypto.randomUUID()),
+    pageSequence = useRef(0),
+    fileSequence = useRef(0),
+    restoreSequence = useRef(0);
+  const pendingAction = useRef<(() => void) | null>(null);
+  const currentJobId = useRef(job?.id);
   currentJobId.current = job?.id;
-  const processing = active(job) || active(inspection);
+  const screenRef = useRef(screen);
+  screenRef.current = screen;
+  const schema =
+    inspection?.status === "SUCCESS" && !inspection.metadata?.requires_sheet
+      ? inspection.metadata?.columns || []
+      : [];
+  const dirty = !!(prompt || columns.length || replacement || newColumn);
+  const processing = active(inspection) || active(job);
   const report = useCallback(
-    (e: unknown) =>
+    (value: unknown) =>
       setError(
-        e instanceof Error ? e.message : "Something went wrong. Please retry.",
+        value instanceof Error
+          ? value.message
+          : "Something went wrong. Please retry.",
       ),
     [],
   );
-
-  usePolling(inspection, setInspection, setNetwork);
-  usePolling(job, setJob, setNetwork);
-
-  const loadFiles = useCallback(
-    async (item: Connection, path: string, cursor = "", append = false) => {
-      setLoadingFiles(true);
-      setError("");
-      try {
-        const result = await api.files(item.id, path, cursor);
-        setFiles((old) => (append ? [...old, ...result.files] : result.files));
-        setFileCursor(result.next_cursor);
-      } catch (e) {
-        report(e);
-      } finally {
-        setLoadingFiles(false);
-      }
-    },
-    [report],
-  );
-
-  const initialize = useCallback(async () => {
+  const go = useCallback((next: Screen) => {
+    setScreen(next);
     setError("");
-    try {
-      const config = await api.bootstrap();
-      setBoot(config);
-      setReady(true);
-      const [saved, jobs, health] = await Promise.all([
-        api.connections(),
-        api.jobs(),
-        api.health(),
-      ]);
-      setConnections(saved.connections);
-      setHistory(jobs.jobs);
-      setServices(health.services);
-      const matched = location.hash.match(/^#job=([a-f0-9-]{36})$/i);
-      if (matched) {
-        const resumed = await api.job(matched[1]);
-        const linked = saved.connections.find(
-          (item) => item.id === resumed.connection_id,
-        );
-        if (linked) {
-          setConnection(linked);
-          setSelected({
-            key: resumed.source_key,
-            size: 0,
-            modified: resumed.created_at,
-            supported: true,
-          });
-          void loadFiles(linked, "");
-        }
-        const config = resumed.config || {};
-        setSheet(String(config.sheet || ""));
-        setDelimiter(String(config.delimiter || ","));
-        setEncoding(String(config.encoding || "UTF-8"));
-        if (resumed.kind === "inspect") setInspection(resumed);
-        else {
-          setJob(resumed);
-          setOperation(config.operation as Operation);
-          setPrompt(String(config.prompt || ""));
-          setColumns((config.target_columns as string[]) || []);
-          setReplacement(String(config.replacement ?? ""));
-          setNewColumn(String(config.new_column || "extracted_value"));
-          if (config.inspection_id)
-            void api
-              .job(String(config.inspection_id))
-              .then(setInspection)
-              .catch(() => {});
-        }
-      } else if (saved.connections.length) {
-        setConnection(saved.connections[0]);
-        void loadFiles(saved.connections[0], "");
-      }
-    } catch (e) {
-      report(e);
-    }
-  }, [loadFiles, report]);
+  }, []);
+  useJobPolling(inspection, setInspection, setNetwork);
+  useJobPolling(job, setJob, setNetwork);
   useEffect(() => {
-    void initialize();
-  }, [initialize]);
-  useEffect(() => {
-    if (job || inspection)
-      void api
-        .jobs()
-        .then((result) => setHistory(result.jobs))
-        .catch(() => {});
-  }, [job?.status, inspection?.status]);
-
-  const loadPage = useCallback(
-    async (current: Job, cursor: string, index: number) => {
-      setLoadingPage(true);
-      setError("");
-      try {
-        const next = await api.results(current.id, cursor, pageSize);
-        if (currentJobId.current === current.id) {
-          setPage(next);
-          setPageNumber(index);
-        }
-      } catch (e) {
-        report(e);
-      } finally {
-        setLoadingPage(false);
-      }
-    },
-    [pageSize, report],
-  );
-  useEffect(() => {
-    if (job?.status === "SUCCESS" && job.result_available) {
-      setCursors([""]);
-      void loadPage(job, "", 0);
-    }
-  }, [job?.id, job?.status, job?.result_available, loadPage]);
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(""), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
   useEffect(() => {
     submitKey.current = crypto.randomUUID();
   }, [
@@ -394,1226 +198,1692 @@ export default function App() {
     prompt,
     columns,
     replacement,
+    removeMatches,
     newColumn,
   ]);
-  useEffect(() => {
-    if (!guide) return;
-    const previous = document.activeElement as HTMLElement | null;
-    const modal = document.querySelector<HTMLElement>(".guide-modal");
-    const elements = () =>
-      Array.from(
-        modal?.querySelectorAll<HTMLElement>(
-          "button, summary, input, a[href]",
-        ) || [],
-      ).filter((element) => !element.hasAttribute("disabled"));
-    elements()[0]?.focus();
-    const keydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setGuide(false);
-      if (event.key === "Tab") {
-        const items = elements();
-        const first = items[0];
-        const last = items[items.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first?.focus();
-        }
+
+  const loadFiles = useCallback(
+    async (item: Connection, path: string, cursor = "", append = false) => {
+      const sequence = ++fileSequence.current;
+      setLoadingFiles(true);
+      try {
+        const result = await api.files(item.id, path, cursor);
+        if (sequence !== fileSequence.current) return;
+        setFiles((old) => (append ? [...old, ...result.files] : result.files));
+        setFileCursor(result.next_cursor);
+      } catch (value) {
+        if (sequence === fileSequence.current) report(value);
+      } finally {
+        if (sequence === fileSequence.current) setLoadingFiles(false);
       }
-    };
-    document.addEventListener("keydown", keydown);
-    return () => {
-      document.removeEventListener("keydown", keydown);
-      previous?.focus();
-    };
-  }, [guide]);
+    },
+    [report],
+  );
+
+  const openJob = useCallback(
+    async (item: Job | string) => {
+      const sequence = ++restoreSequence.current;
+      setError("");
+      try {
+        const next = await api.job(typeof item === "string" ? item : item.id);
+        if (sequence !== restoreSequence.current) return;
+        if (next.kind === "inspect") {
+          setInspection(next);
+          setScreen("files");
+          return;
+        }
+        setJob(next);
+        setPage(null);
+        setScreen("job");
+        setDataView("result");
+        setInspection(null);
+        window.history.replaceState(null, "", "#job=" + next.id);
+        if (next.config?.inspection_id) {
+          const source = await api.job(String(next.config.inspection_id));
+          if (sequence === restoreSequence.current) setInspection(source);
+        }
+      } catch (value) {
+        if (sequence === restoreSequence.current) report(value);
+      }
+    },
+    [report],
+  );
+
+  const initialize = useCallback(async () => {
+    setInitializing(true);
+    setError("");
+    try {
+      const config = await api.bootstrap();
+      setBoot(config);
+      const [saved, jobs, health] = await Promise.all([
+        api.connections(),
+        api.jobs({ kind: "transform", limit: 1 }),
+        api.health(),
+      ]);
+      setConnections(saved.connections);
+      setConnection(saved.connections[0] || null);
+      setJobCount(jobs.total);
+      setServices(health.services);
+      const match = location.hash.match(/^#job=([a-f0-9-]{36})$/i);
+      if (match) await openJob(match[1]);
+    } catch (value) {
+      report(value);
+    } finally {
+      setInitializing(false);
+    }
+  }, [openJob, report]);
+  useEffect(() => {
+    void initialize();
+  }, [initialize]);
+  useEffect(() => {
+    if (inspection?.status !== "SUCCESS") return;
+    if (inspection.metadata?.sheets) setSheets(inspection.metadata.sheets);
+    if (
+      !inspection.metadata?.requires_sheet &&
+      inspection.metadata?.columns?.length &&
+      screenRef.current === "files"
+    )
+      setScreen("editor");
+  }, [inspection?.id, inspection?.status]);
+
+  const loadPage = useCallback(
+    async (current: Job, cursor: string, index: number) => {
+      const sequence = ++pageSequence.current;
+      setLoadingPage(true);
+      setError("");
+      try {
+        const next = await api.results(current.id, cursor, pageSize);
+        if (
+          sequence === pageSequence.current &&
+          currentJobId.current === current.id
+        ) {
+          setPage(next);
+          setPageNumber(index);
+        }
+      } catch (value) {
+        if (sequence === pageSequence.current) report(value);
+      } finally {
+        if (sequence === pageSequence.current) setLoadingPage(false);
+      }
+    },
+    [pageSize, report],
+  );
+  useEffect(() => {
+    if (
+      screen === "results" &&
+      job?.status === "SUCCESS" &&
+      !resultExpired(job)
+    ) {
+      setCursors([""]);
+      setPage(null);
+      void loadPage(job, "", 0);
+    }
+  }, [screen, job?.id, job?.status, pageSize, loadPage]);
+
+  function clearDraft() {
+    setInspection(null);
+    setSelected(null);
+    setColumns([]);
+    setPrompt("");
+    setReplacement("");
+    setRemoveMatches(false);
+    setNewColumn("");
+    setReusedFrom("");
+    setPendingReuse(null);
+    setSheet("");
+    setSheets([]);
+  }
+  function confirmDraft(action: () => void) {
+    if (dirty && !job) {
+      pendingAction.current = action;
+      setDialog("discard");
+    } else action();
+  }
+  function newJob() {
+    confirmDraft(() => {
+      clearDraft();
+      setJob(null);
+      setPage(null);
+      window.history.replaceState(null, "", location.pathname);
+      if (connection) {
+        go("files");
+        void loadFiles(connection, prefix);
+      } else go("connection");
+    });
+  }
+  function prepare() {
+    if (job) {
+      if (active(job)) go("job");
+      else newJob();
+      return;
+    }
+    go(schema.length ? "editor" : connection ? "files" : "connection");
+    if (connection && !schema.length && !files.length)
+      void loadFiles(connection, prefix);
+  }
+  function resetInspection() {
+    setInspection(null);
+    setColumns([]);
+  }
+  function chooseFile(file: SourceFile) {
+    if (job) { setJob(null); setPage(null); setPrompt(""); setReplacement(""); setNewColumn(""); setReusedFrom(""); }
+    setSelected(file);
+    resetInspection();
+    setSheet("");
+    setSheets([]);
+    setError("");
+    if (pendingReuse && pendingReuse.source_key !== file.key)
+      setPendingReuse(null);
+  }
+  function applyReuse(item: Job) {
+    const config = item.config || {};
+    setOperation(
+      (config.operation as Operation) || item.operation || "regex_replace",
+    );
+    setPrompt(String(config.prompt || ""));
+    setReplacement(String(config.replacement ?? ""));
+    setRemoveMatches(config.replacement === "");
+    setNewColumn(String(config.new_column || ""));
+    setColumns([]);
+    setReusedFrom(item.id);
+    setJob(null);
+    setPage(null);
+    setSheet(String(config.sheet || ""));
+    setDelimiter(String(config.delimiter || ","));
+    setEncoding(String(config.encoding || "UTF-8"));
+    setInspection(null);
+    setSheets([]);
+    setPendingReuse(item);
+    const linked = connections.find(
+      (value) =>
+        value.id === item.connection_id ||
+        (value.bucket === item.bucket && value.region === item.region),
+    );
+    setConnection(linked || null);
+    setSelected({
+      key: item.source_key,
+      size: 0,
+      supported: true,
+      modified: item.created_at,
+    });
+    const folder = item.source_key.includes("/")
+      ? item.source_key.slice(0, item.source_key.lastIndexOf("/") + 1)
+      : "";
+    setPrefix(folder);
+    window.history.replaceState(null, "", location.pathname);
+    if (linked) {
+      go("files");
+      void loadFiles(linked, folder);
+    } else {
+      setCredentials((old) => ({
+        ...old,
+        bucket: item.bucket || "",
+        region: item.region || "us-east-1",
+        access_key: "",
+        secret_key: "",
+        session_token: "",
+      }));
+      go("connection");
+    }
+  }
+  function requestReuse(item: Job) {
+    confirmDraft(() => {
+      void api.job(item.id).then(applyReuse).catch(report);
+    });
+  }
+  useEffect(() => {
+    if (!pendingReuse || !schema.length) return;
+    const wanted = (pendingReuse.config?.target_columns as string[]) || [],
+      available = schema.map((column) => column.name);
+    setColumns(
+      wanted
+        .filter((name) => available.includes(name))
+        .slice(0, operation === "regex_extract" ? 1 : 50),
+    );
+    if (wanted.some((name) => !available.includes(name)))
+      setError(
+        "Some reused columns no longer exist. Select columns from the new preview.",
+      );
+    setPendingReuse(null);
+  }, [inspection?.id, inspection?.status]);
 
   async function connect(event: React.FormEvent) {
     event.preventDefault();
     setConnecting(true);
     setError("");
     try {
-      const result = await api.connect(credentials);
-      setConnection(result);
-      setConnections((old) => [result, ...old]);
+      const next = await api.connect(credentials);
+      setConnection(next);
+      setConnections((old) => [next, ...old]);
       setCredentials((old) => ({
         ...old,
         access_key: "",
         secret_key: "",
         session_token: "",
       }));
-      setSelected(null);
-      setInspection(null);
-      setJob(null);
-      setPage(null);
-      setPrefix("");
-      await loadFiles(result, "");
-    } catch (e) {
-      report(e);
+      setShowSecret(false);
+      const matching =
+        pendingReuse?.bucket === next.bucket &&
+        pendingReuse?.region === next.region;
+      if (!matching) {
+        clearDraft();
+        setPrefix("");
+      }
+      go("files");
+      await loadFiles(next, matching ? prefix : "");
+    } catch (value) {
+      report(value);
     } finally {
       setConnecting(false);
     }
-  }
-  function chooseFile(file: SourceFile) {
-    setSelected(file);
-    setInspection(null);
-    setJob(null);
-    setPage(null);
-    setColumns([]);
-    setSheet("");
-    setError("");
-    window.history.replaceState(null, "", location.pathname);
   }
   async function inspectFile() {
     if (!connection || !selected) return;
     setSubmitting(true);
     setError("");
     setColumns([]);
-    setPage(null);
-    setJob(null);
     try {
-      const result = await api.inspect({
-        connection_id: connection.id,
-        source_key: selected.key,
-        sheet,
-        delimiter,
-        encoding,
-      });
-      setInspection(result);
-    } catch (e) {
-      report(e);
+      setInspection(
+        await api.inspect({
+          connection_id: connection.id,
+          source_key: selected.key,
+          sheet,
+          delimiter,
+          encoding,
+        }),
+      );
+    } catch (value) {
+      report(value);
     } finally {
       setSubmitting(false);
     }
   }
-  const schema =
-    inspection?.status === "SUCCESS" && !inspection.metadata?.requires_sheet
-      ? inspection.metadata?.columns || []
-      : [];
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!connection || !selected || !inspection || !schema.length) return;
+  function validateDraft() {
+    if (!schema.length)
+      return "Preview the selected file before configuring a job.";
+    if (!columns.length) return "Choose at least one target column.";
+    if (prompt.trim().length < 3)
+      return "Describe the pattern or formatting in at least three characters.";
+    if (operation === "regex_replace" && !removeMatches && replacement === "")
+      return "Enter replacement text, or select ‘Remove matched text instead’.";
+    if (
+      operation === "regex_extract" &&
+      (!/^[\p{L}\p{N}_][\p{L}\p{N}_ .-]{0,127}$/u.test(newColumn) ||
+        schema.some((c) => c.name.toLowerCase() === newColumn.toLowerCase()))
+    )
+      return "Choose a unique new column name using letters, digits, spaces, dots, dashes or underscores.";
+    return "";
+  }
+  async function submit() {
+    const issue = validateDraft();
+    if (issue) {
+      setError(issue);
+      setDialog(null);
+      return;
+    }
+    if (!connection || !selected || !inspection) return;
     setSubmitting(true);
     setError("");
-    setPage(null);
-    const body = {
-      connection_id: connection.id,
-      source_key: selected.key,
-      inspection_id: inspection.id,
-      sheet: inspection.metadata?.sheet || sheet,
-      delimiter,
-      encoding,
-      operation,
-      prompt,
-      target_columns: columns,
-      ...(operation === "regex_replace" ? { replacement } : {}),
-      ...(operation === "regex_extract" ? { new_column: newColumn } : {}),
-    };
     try {
-      const result = await api.createJob(body, submitKey.current);
-      setJob(result);
-      window.history.replaceState(null, "", "#job=" + result.id);
+      const next = await api.createJob(
+        {
+          connection_id: connection.id,
+          source_key: selected.key,
+          inspection_id: inspection.id,
+          sheet: inspection.metadata?.sheet || sheet,
+          delimiter,
+          encoding,
+          operation,
+          prompt,
+          target_columns: columns,
+          ...(operation === "regex_replace"
+            ? { replacement: removeMatches ? "" : replacement }
+            : {}),
+          ...(operation === "regex_extract" ? { new_column: newColumn } : {}),
+        },
+        submitKey.current,
+      );
+      setJob(next);
+      setJobCount((count) => count + 1);
+      setPage(null);
+      setDataView("result");
+      setDialog(null);
+      go("job");
+      window.history.replaceState(null, "", "#job=" + next.id);
       submitKey.current = crypto.randomUUID();
-    } catch (e) {
-      report(e);
-      if (e instanceof RequestError && e.code !== "NETWORK_ERROR")
+    } catch (value) {
+      report(value);
+      if (value instanceof RequestError && value.code !== "NETWORK_ERROR")
         submitKey.current = crypto.randomUUID();
     } finally {
       setSubmitting(false);
     }
   }
-  async function cancel(current: Job) {
+  async function cancel() {
+    if (!cancelTarget) return;
+    setSubmitting(true);
     try {
-      const result = await api.cancel(current.id);
-      current.kind === "inspect" ? setInspection(result) : setJob(result);
-    } catch (e) {
-      report(e);
+      const next = await api.cancel(cancelTarget.id);
+      next.kind === "inspect" ? setInspection(next) : setJob(next);
+      setDialog(null);
+    } catch (value) {
+      report(value);
+    } finally {
+      setSubmitting(false);
     }
   }
-  async function openJob(item: Job) {
-    setError("");
+  async function disconnect() {
+    if (!connection) return;
+    setSubmitting(true);
     try {
-      const result = await api.job(item.id);
-      if (result.kind === "inspect") setInspection(result);
-      else {
-        setJob(result);
-        setPage(null);
-        setInspection(null);
-        setSelected(null);
-      }
-      setView("workspace");
-      window.history.replaceState(null, "", "#job=" + item.id);
-    } catch (e) {
-      report(e);
+      await api.disconnect(connection.id);
+      setConnections((old) => old.filter((item) => item.id !== connection.id));
+      setConnection(null);
+      clearDraft();
+      setFiles([]);
+      setJob(null);
+      setDialog(null);
+      go("connection");
+    } catch (value) {
+      report(value);
+    } finally {
+      setSubmitting(false);
     }
   }
-  const current = active(inspection) ? inspection : job;
-  const tableRows = page?.rows || inspection?.metadata?.preview || [];
-  const tableColumns = page?.columns || schema;
-  const transformation = operations.find((item) => item.id === operation)!;
+  function requestCancel(item: Job) {
+    setCancelTarget(item);
+    setDialog("cancel");
+  }
+  const phase = ["connection", "files", "editor", "job", "results"].indexOf(
+    screen,
+  );
+  const canOpen = (next: Screen) =>
+    next === "connection" ||
+    (next === "files"
+      ? !!connection
+      : next === "editor"
+        ? !!schema.length && !!selected && !job
+        : next === "job"
+          ? !!job
+          : next === "results"
+            ? job?.status === "SUCCESS"
+            : true);
+  const titles: Record<Screen, string> = {
+    history: "Jobs",
+    connection: "Connect your data",
+    files: "Select a file",
+    editor: "Configure transformation",
+    job: "Job details",
+    results: job && resultExpired(job) ? "Results expired" : "Results",
+  };
+  const description =
+    screen === "history"
+      ? "Review past jobs and reuse a configuration."
+      : screen === "connection"
+        ? "Choose the S3 bucket that contains your CSV or Excel file."
+        : screen === "files"
+          ? "s3://" + (connection?.bucket || "") + " · CSV and Excel (.xlsx)"
+          : screen === "results"
+            ? job?.source_key
+            : "";
   const changed = Object.values(job?.metadata?.changed_cells || {}).reduce(
-    (a, b) => a + b,
+    (sum, value) => sum + value,
     0,
   );
-  const steps = [!!connection, !!schema.length, job?.status === "SUCCESS"];
-
+  const jobConfig = job?.config || {},
+    inputPreview = inspection?.metadata?.preview || [];
+  const noServices =
+    boot &&
+    (!services.queue ||
+      !services.worker ||
+      !services.spark ||
+      !boot.llm_configured);
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <a
+    <div className="clearflow-app">
+      <header className="app-header">
+        <button
           className="brand"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setView("workspace");
-          }}
+          onClick={() => go("history")}
+          aria-label="Clearflow home"
         >
           <span className="brand-mark">
-            <Layers3 size={22} />
+            <Layers2 />
           </span>
-          PatternForge
-          <span className="brand-dot" />
-        </a>
-        <div className="workspace-label">YOUR WORKSPACE</div>
+          Clearflow
+        </button>
+        <span className="header-divider" />
+        <span className="header-label">Data preparation</span>
+        <div className="header-actions">
+          <button
+            className="icon-button"
+            aria-label="Help"
+            onClick={() => setDialog("help")}
+          >
+            <CircleHelp />
+          </button>
+          <span className="avatar" aria-label="Guest workspace">
+            G
+          </span>
+        </div>
+      </header>
+      <aside className="sidebar">
+        <div className="workspace-label">Workspace</div>
         <nav aria-label="Main navigation">
           <button
-            className={view === "workspace" ? "nav-item selected" : "nav-item"}
-            onClick={() => setView("workspace")}
+            className={
+              "nav-item " +
+              (!["connection", "history"].includes(screen) ? "is-active" : "")
+            }
+            onClick={prepare}
           >
-            <LayoutDashboard size={18} />
-            Data workspace
+            <Table2 />
+            <span>Prepare data</span>
           </button>
           <button
-            className={view === "activity" ? "nav-item selected" : "nav-item"}
-            onClick={() => setView("activity")}
+            className={"nav-item " + (screen === "history" ? "is-active" : "")}
+            onClick={() => go("history")}
           >
-            <Clock3 size={18} />
-            Activity
-            <span className="nav-count">
-              {history.filter((item) => item.kind === "transform").length}
-            </span>
+            <History />
+            <span>Jobs</span>
+            <span className="count">{jobCount}</span>
           </button>
-          <button className="nav-item" onClick={() => setGuide(true)}>
-            <BookOpen size={18} />
-            Quick guide
-            <ArrowUpRight size={14} className="nav-arrow" />
+          <button
+            className={
+              "nav-item " + (screen === "connection" ? "is-active" : "")
+            }
+            onClick={() => go("connection")}
+          >
+            <Database />
+            <span>Connections</span>
           </button>
         </nav>
-        <div className="sidebar-bottom">
-          <div className="privacy-card">
-            <ShieldCheck size={22} />
-            <strong>Your data, protected.</strong>
-            <p>
-              Credentials are encrypted. Your original files stay untouched.
-            </p>
-          </div>
-          <div className="profile">
-            <span>PF</span>
-            <div>
-              <strong>Private session</strong>
-              <small>This browser only</small>
-            </div>
-            <LockKeyhole size={14} />
-          </div>
+        <div className="sidebar-end">
+          <FolderClosed />
+          Guest session
         </div>
       </aside>
-      <main className="main">
-        <header className="topbar">
+      <nav className="mobile-nav" aria-label="Workspace navigation">
+        <button
+          onClick={prepare}
+          className={
+            screen !== "history" && screen !== "connection" ? "is-active" : ""
+          }
+        >
+          Prepare data
+        </button>
+        <button
+          onClick={() => go("history")}
+          className={screen === "history" ? "is-active" : ""}
+        >
+          Jobs
+        </button>
+        <button
+          onClick={() => go("connection")}
+          className={screen === "connection" ? "is-active" : ""}
+        >
+          Connections
+        </button>
+      </nav>
+      <main className="main-content" id="main-content">
+        <div className="page-header">
           <div>
-            Workspace <ChevronRight size={14} />
-            <strong>
-              {view === "workspace" ? "Data transformation" : "Activity"}
-            </strong>
-          </div>
-          <div className="topbar-actions">
-            <span
-              className={`service-light ${services.queue && services.worker && services.spark ? "online" : ""}`}
-            />
-            {services.queue && services.worker && services.spark
-              ? "Processing service online"
-              : "Service setup required"}
-            <button
-              className="icon-button"
-              aria-label="Help"
-              onClick={() => setGuide(true)}
-            >
-              <CircleHelp size={19} />
-            </button>
-            <span className="avatar">M</span>
-          </div>
-        </header>
-        <div className="page-content">
-          <div className="page-heading">
-            <div className="eyebrow">
-              <span /> NATURAL LANGUAGE. STRUCTURED RESULTS.
-            </div>
-            <h1>
-              {view === "workspace"
-                ? "Make your data work for you."
-                : "Your processing activity."}
-            </h1>
-            <p>
-              {view === "workspace"
-                ? "Connect your S3 bucket, describe a change, and let your data do the rest."
-                : "Track recent jobs, recover a running task, and revisit completed results."}
-            </p>
-          </div>
-          {error && (
-            <div className="alert error" role="alert">
-              <XCircle size={18} />
-              <div>
-                <strong>Action needed</strong>
-                <p>{error}</p>
-              </div>
-              <button
-                className="icon-button"
-                aria-label="Dismiss error"
-                onClick={() => setError("")}
-              >
-                <X size={17} />
-              </button>
-            </div>
-          )}
-          {network && (
-            <div className="alert warning" role="status">
-              <RefreshCw size={17} />
-              <p>
-                Reconnecting to task updates. Processing may still be running.
-              </p>
-            </div>
-          )}
-          {!ready && (
-            <div className="alert warning">
-              <Terminal size={18} />
-              <div>
-                <strong>Connect the application service</strong>
-                <p>
-                  The workspace is waiting for the backend. Start the app, then
-                  retry.
-                </p>
-              </div>
-              <button
-                className="button secondary small"
-                onClick={() => void initialize()}
-              >
-                Retry connection
-              </button>
-            </div>
-          )}
-          {ready && !boot?.llm_configured && (
-            <div className="alert info">
-              <PlugZap size={18} />
-              <div>
-                <strong>One setup step before your first transformation</strong>
-                <p>
-                  The administrator needs to connect a language model. You can
-                  still connect S3 and inspect your files.
-                </p>
-              </div>
-              <button className="text-button" onClick={() => setGuide(true)}>
-                Setup guide <ArrowRight size={14} />
-              </button>
-            </div>
-          )}
-
-          {view === "activity" ? (
-            <section className="card activity-card">
-              <div className="card-header">
-                <div>
-                  <span className="section-kicker">PROCESSING HISTORY</span>
-                  <h2>Recent jobs</h2>
-                </div>
+            <h1>{titles[screen]}</h1>
+            {description && <p className="page-context">{description}</p>}
+            {screen === "job" && job && (
+              <div className="page-context job-id">
+                <span title={job.id}>{job.id}</span>
                 <button
-                  className="button secondary small"
+                  className="icon-button"
+                  aria-label="Copy job ID"
                   onClick={() =>
-                    void api
-                      .jobs()
-                      .then((result) => setHistory(result.jobs))
-                      .catch(report)
+                    void navigator.clipboard
+                      .writeText(job.id)
+                      .then(() => setToast("Job ID copied."))
+                      .catch(() => setToast("Select the job ID to copy it."))
                   }
                 >
-                  <RefreshCw size={14} />
-                  Refresh
+                  <Copy />
                 </button>
+                <Status job={job} />
               </div>
-              {!history.length ? (
-                <div className="empty-state">
-                  <Clock3 size={34} />
-                  <h3>A fresh start</h3>
-                  <p>Your inspections and transformations will appear here.</p>
+            )}
+          </div>
+          {screen === "history" || screen === "results" ? (
+            <button className="primary" onClick={newJob}>
+              <Plus />
+              {screen === "history" ? "Create job" : "Create another job"}
+            </button>
+          ) : screen === "job" && job ? (
+            active(job) ? (
+              <button
+                className="danger-button"
+                disabled={job.cancel_requested}
+                onClick={() => requestCancel(job)}
+              >
+                <Square />
+                {job.cancel_requested ? "Cancelling…" : "Cancel job"}
+              </button>
+            ) : (
+              <button onClick={() => requestReuse(job)}>
+                <Copy />
+                Reuse configuration
+              </button>
+            )
+          ) : null}
+        </div>
+        {screen !== "history" && (
+          <nav className="steps" aria-label="Transformation steps">
+            {(
+              ["connection", "files", "editor", "job", "results"] as Screen[]
+            ).map((value, index) => (
+              <div className="step-pair" key={value}>
+                <button
+                  disabled={
+                    !canOpen(value) ||
+                    (processing && !["job", "results"].includes(value))
+                  }
+                  className={
+                    "step " +
+                    (phase === index
+                      ? "is-active"
+                      : phase > index
+                        ? "is-done"
+                        : "")
+                  }
+                  onClick={() => go(value)}
+                  aria-current={phase === index ? "step" : undefined}
+                >
+                  <span className="step-circle">
+                    {phase > index ? <Check /> : index + 1}
+                  </span>
+                  {
+                    [
+                      "Connect",
+                      "Select file",
+                      "Configure",
+                      "Processing",
+                      "Results",
+                    ][index]
+                  }
+                </button>
+                {index < 4 && <span className="step-line" />}
+              </div>
+            ))}
+          </nav>
+        )}
+        {initializing && (
+          <div className="notice" role="status">
+            <LoaderCircle className="spin" />
+            Connecting to your workspace…
+          </div>
+        )}
+        {!initializing && noServices && (
+          <div className="notice setup-notice">
+            <Info />
+            <span>
+              Processing services need setup. This workspace is live, not a
+              simulation.
+            </span>
+            <button className="link" onClick={() => setDialog("help")}>
+              View setup
+            </button>
+          </div>
+        )}
+        {network && (
+          <div className="notice warning" role="status">
+            <RefreshCw />
+            <span>{network} Reconnecting automatically.</span>
+          </div>
+        )}
+        {error && (
+          <div className="notice danger" role="alert">
+            <CircleAlert />
+            <span>{error}</span>
+            <button
+              className="icon-button"
+              aria-label="Dismiss error"
+              onClick={() => setError("")}
+            >
+              <X />
+            </button>
+          </div>
+        )}
+        {!boot && !initializing && (
+          <button onClick={() => void initialize()}>
+            <RefreshCw />
+            Reconnect to service
+          </button>
+        )}
+        {pendingReuse && ["connection", "files"].includes(screen) && (
+          <div className="notice reuse-note">
+            <Copy />
+            <span>
+              Reusing {pendingReuse.id.slice(0, 8)} ·{" "}
+              {screen === "connection"
+                ? "Connect to " +
+                  (pendingReuse.bucket || "the source bucket") +
+                  " to continue."
+                : "Preview the source file before running the new job."}
+            </span>
+          </div>
+        )}
+        {screen === "history" && boot && (
+          <JobsHistory
+            onOpen={(item) => confirmDraft(() => void openJob(item))}
+            onReuse={requestReuse}
+            onCreate={newJob}
+            onError={setError}
+            onCount={setJobCount}
+          />
+        )}
+
+        {screen === "connection" && (
+          <div className="connection-layout">
+            <section className="panel">
+              <div className="panel-head">
+                <h2>
+                  <Database />
+                  Amazon S3
+                </h2>
+                {connection && (
+                  <span className="connection-active">
+                    <span className="status-dot" />
+                    Connected
+                  </span>
+                )}
+              </div>
+              <div className="panel-body">
+                {connections.length > 0 && (
+                  <div className="saved-connections">
+                    <label htmlFor="saved-connection">Saved connections</label>
+                    <div className="inline-fields">
+                      <select
+                        id="saved-connection"
+                        value={connection?.id || ""}
+                        onChange={(event) => {
+                          const next = connections.find(
+                            (item) => item.id === event.target.value,
+                          );
+                          if (next) {
+                            clearDraft();
+                            setConnection(next);
+                            setFiles([]);
+                            setPrefix("");
+                          }
+                        }}
+                      >
+                        <option value="" disabled>
+                          Choose a connection
+                        </option>
+                        {connections.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.bucket} · {item.region}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="primary"
+                        disabled={!connection || processing}
+                        onClick={() => {
+                          if (connection) {
+                            go("files");
+                            void loadFiles(connection, prefix);
+                          }
+                        }}
+                      >
+                        Continue
+                        <ArrowRight />
+                      </button>
+                    </div>
+                    {connection && (
+                      <div className="saved-meta">
+                        <span>Expires {dateLabel(connection.expires_at)}</span>
+                        <button
+                          className="link danger-text"
+                          disabled={submitting}
+                          onClick={() => setDialog("disconnect")}
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <form
+                  onSubmit={(event) => void connect(event)}
+                  autoComplete="off"
+                >
+                  <div className="field">
+                    <label htmlFor="access-key">AWS access key ID</label>
+                    <input
+                      id="access-key"
+                      required
+                      minLength={3}
+                      maxLength={128}
+                      spellCheck={false}
+                      autoCapitalize="off"
+                      autoComplete="off"
+                      value={credentials.access_key}
+                      onChange={(e) =>
+                        setCredentials({
+                          ...credentials,
+                          access_key: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="secret-key">AWS secret access key</label>
+                    <div className="secret-input">
+                      <input
+                        id="secret-key"
+                        required
+                        minLength={8}
+                        maxLength={256}
+                        type={showSecret ? "text" : "password"}
+                        autoComplete="new-password"
+                        value={credentials.secret_key}
+                        onChange={(e) =>
+                          setCredentials({
+                            ...credentials,
+                            secret_key: e.target.value,
+                          })
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="link"
+                        aria-pressed={showSecret}
+                        onClick={() => setShowSecret(!showSecret)}
+                      >
+                        {showSecret ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="bucket">Bucket name</label>
+                    <input
+                      id="bucket"
+                      required
+                      maxLength={255}
+                      placeholder="my-data-bucket"
+                      spellCheck={false}
+                      value={credentials.bucket}
+                      onChange={(e) =>
+                        setCredentials({
+                          ...credentials,
+                          bucket: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="field">
+                    <label htmlFor="region">AWS region</label>
+                    <input
+                      id="region"
+                      required
+                      maxLength={32}
+                      placeholder="us-east-1"
+                      value={credentials.region}
+                      onChange={(e) =>
+                        setCredentials({
+                          ...credentials,
+                          region: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <details className="advanced">
+                    <summary>Temporary credentials (optional)</summary>
+                    <div className="field">
+                      <label htmlFor="session-token">STS session token</label>
+                      <input
+                        id="session-token"
+                        type="password"
+                        maxLength={4096}
+                        autoComplete="new-password"
+                        value={credentials.session_token}
+                        onChange={(e) =>
+                          setCredentials({
+                            ...credentials,
+                            session_token: e.target.value,
+                          })
+                        }
+                      />
+                      <small>Required for temporary AWS sessions.</small>
+                    </div>
+                  </details>
                   <button
-                    className="button primary"
-                    onClick={() => setView("workspace")}
+                    type="submit"
+                    className="primary"
+                    disabled={connecting || !boot || processing}
                   >
-                    Open workspace <ArrowRight size={15} />
+                    {connecting ? (
+                      <LoaderCircle className="spin" />
+                    ) : (
+                      <Database />
+                    )}
+                    {connecting ? "Connecting…" : "Connect to S3"}
                   </button>
-                </div>
-              ) : (
-                <div className="table-scroll">
-                  <table className="activity-table">
-                    <thead>
-                      <tr>
-                        <th>Source file</th>
-                        <th>Task</th>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th />
+                  <p className="inline-note">
+                    <LockKeyhole />
+                    Only list and read access is required.
+                  </p>
+                </form>
+              </div>
+            </section>
+            <aside className="connection-guide">
+              <h2>How it works</h2>
+              <ol>
+                <li>Select a CSV or Excel file</li>
+                <li>Describe your transformation</li>
+                <li>Review the processed data</li>
+              </ol>
+              <div className="privacy-note">
+                <ShieldCheck />
+                <p>
+                  Your credentials are encrypted on the server. Keys and file
+                  rows are never sent to the language model.
+                </p>
+              </div>
+              <p className="muted">Original files remain unchanged.</p>
+            </aside>
+          </div>
+        )}
+
+        {screen === "files" && (
+          <>
+            <form
+              className="file-toolbar"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (connection) void loadFiles(connection, prefix);
+              }}
+            >
+              <div className="search-field">
+                <Search />
+                <input
+                  aria-label="S3 prefix"
+                  placeholder="Filter by path prefix, e.g. reports/"
+                  value={prefix}
+                  maxLength={1024}
+                  onChange={(e) => setPrefix(e.target.value)}
+                />
+              </div>
+              <button type="submit" disabled={loadingFiles || processing}>
+                <RefreshCw className={loadingFiles ? "spin" : ""} />
+                Refresh files
+              </button>
+            </form>
+            <section className="panel">
+              <div className="table-wrap">
+                <table className="files-table" aria-label="Source files">
+                  <thead>
+                    <tr>
+                      <th aria-label="Selection" />
+                      <th>File path</th>
+                      <th>Size</th>
+                      <th>Last modified</th>
+                      <th>Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {files.map((file) => (
+                      <tr
+                        key={file.key}
+                        className={
+                          file.key === selected?.key
+                            ? "file-active"
+                            : !file.supported
+                              ? "file-disabled"
+                              : ""
+                        }
+                      >
+                        <td>
+                          <input
+                            type="radio"
+                            name="source-file"
+                            aria-label={"Select " + file.key}
+                            disabled={
+                              !file.supported || processing || loadingFiles
+                            }
+                            checked={file.key === selected?.key}
+                            onChange={() => chooseFile(file)}
+                          />
+                        </td>
+                        <td>
+                          <span className="file-name">
+                            <FileSpreadsheet />
+                            {file.key}
+                          </span>
+                        </td>
+                        <td>{formatBytes(file.size)}</td>
+                        <td>{dateLabel(file.modified)}</td>
+                        <td>
+                          {file.key.split(".").pop()?.toUpperCase()}
+                          {!file.supported && " · Unsupported"}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {history.map((item) => (
-                        <tr key={item.id}>
-                          <td title={item.source_key}>
-                            <FileSpreadsheet size={16} />
-                            {filename(item.source_key)}
-                          </td>
-                          <td>
-                            {item.kind === "inspect"
-                              ? "File inspection"
-                              : "Transformation"}
-                          </td>
-                          <td>
-                            <Status job={item} />
-                          </td>
-                          <td>{new Date(item.created_at).toLocaleString()}</td>
-                          <td>
-                            <button
-                              className="text-button"
-                              onClick={() => void openJob(item)}
-                            >
-                              Open <ArrowUpRight size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!files.length && (
+                <div className="empty compact" role="status">
+                  {loadingFiles
+                    ? "Loading source files…"
+                    : "No files match this path. Try a different prefix."}
                 </div>
               )}
-            </section>
-          ) : (
-            <>
-              <div className="stepper">
-                {[
-                  "Connect your data",
-                  "Describe a transformation",
-                  "Explore your results",
-                ].map((text, index) => (
-                  <div
-                    key={text}
-                    className={`step ${steps[index] ? "done" : index === 0 || steps[index - 1] ? "current" : ""}`}
+              <div className="table-bottom">
+                <span>{files.length} files loaded</span>
+                {fileCursor ? (
+                  <button
+                    className="link"
+                    disabled={loadingFiles || !connection}
+                    onClick={() =>
+                      connection &&
+                      void loadFiles(connection, prefix, fileCursor, true)
+                    }
                   >
-                    <span>
-                      {steps[index] ? <Check size={14} /> : index + 1}
-                    </span>
-                    <strong>{text}</strong>
-                    {index < 2 && <div className="step-line" />}
-                  </div>
-                ))}
+                    Load more files
+                  </button>
+                ) : (
+                  <span>Original files will not be modified</span>
+                )}
               </div>
-              <div className="workspace-grid">
-                <section className="card source-card">
-                  <div className="card-header">
-                    <div>
-                      <span className="section-kicker">01 / DATA SOURCE</span>
-                      <h2>
-                        <Database size={19} />
-                        Connect to Amazon S3
-                      </h2>
-                    </div>
-                    <span className="provider-icon">
-                      <Cloud size={20} />
-                    </span>
-                  </div>
-                  {!connection ? (
-                    <form className="source-form" onSubmit={connect}>
-                      <p className="helper">
-                        Use a bucket you have permission to list and read.
+            </section>
+            {selected && (
+              <div className="file-options">
+                {selected.key.toLowerCase().endsWith(".xlsx") ? (
+                  <div className="field">
+                    <label htmlFor="worksheet">Worksheet</label>
+                    {sheets.length ? (
+                      <select
+                        id="worksheet"
+                        disabled={processing}
+                        value={sheet}
+                        onChange={(e) => {
+                          setSheet(e.target.value);
+                          resetInspection();
+                        }}
+                      >
+                        <option value="">Select a worksheet</option>
+                        {sheets.map((name) => (
+                          <option key={name}>{name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="muted">
+                        Preview this workbook to discover its worksheets.
                       </p>
-                      {connections.length > 0 && (
-                        <label>
-                          Existing connection
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              const item = connections.find(
-                                (c) => c.id === e.target.value,
-                              );
-                              if (item) {
-                                setConnection(item);
-                                void loadFiles(item, "");
-                              }
-                            }}
-                          >
-                            <option value="">Choose a saved connection…</option>
-                            {connections.map((item) => (
-                              <option value={item.id} key={item.id}>
-                                {item.bucket}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      )}
-                      <label>
-                        Bucket name
-                        <input
-                          required
-                          name="bucket"
-                          placeholder="my-data-bucket"
-                          autoComplete="off"
-                          value={credentials.bucket}
-                          onChange={(e) =>
-                            setCredentials({
-                              ...credentials,
-                              bucket: e.target.value,
-                            })
+                    )}
+                  </div>
+                ) : (
+                  <details className="advanced">
+                    <summary>CSV settings</summary>
+                    <div className="two-fields">
+                      <div className="field">
+                        <label htmlFor="encoding">Encoding</label>
+                        <select
+                          id="encoding"
+                          value={encoding}
+                          disabled={processing}
+                          onChange={(e) => {
+                            setEncoding(e.target.value);
+                            resetInspection();
+                          }}
+                        >
+                          {["UTF-8", "UTF-16", "ISO-8859-1"].map((value) => (
+                            <option key={value}>{value}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="field">
+                        <label htmlFor="delimiter">Delimiter</label>
+                        <select
+                          id="delimiter"
+                          value={delimiter}
+                          disabled={processing}
+                          onChange={(e) => {
+                            setDelimiter(e.target.value);
+                            resetInspection();
+                          }}
+                        >
+                          {[
+                            [",", "Comma"],
+                            [";", "Semicolon"],
+                            ["\t", "Tab"],
+                            ["|", "Pipe"],
+                          ].map(([value, label]) => (
+                            <option key={value} value={value}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <small>
+                      The first row contains column names. Values are read as
+                      text.
+                    </small>
+                  </details>
+                )}
+              </div>
+            )}
+            {inspection && active(inspection) && (
+              <div className="notice" role="status">
+                <LoaderCircle className="spin" />
+                <span>
+                  {stageLabels[inspection.stage] || "Reading source…"}
+                </span>
+                <button
+                  className="link"
+                  disabled={inspection.cancel_requested}
+                  onClick={() => requestCancel(inspection)}
+                >
+                  Cancel preview
+                </button>
+              </div>
+            )}
+            {inspection?.status === "FAILED" && (
+              <div className="notice danger" role="alert">
+                <CircleAlert />
+                <span>
+                  {inspection.error?.message ||
+                    "The file could not be read. Check your connection and parsing options."}
+                </span>
+              </div>
+            )}
+            <div className="file-bottom">
+              <button className="quiet" onClick={() => go("connection")}>
+                <ArrowLeft />
+                Back
+              </button>
+              <button
+                className="primary"
+                disabled={
+                  !selected ||
+                  processing ||
+                  submitting ||
+                  !boot ||
+                  (sheets.length > 0 && !sheet)
+                }
+                onClick={() => void inspectFile()}
+              >
+                {submitting || active(inspection) ? (
+                  <LoaderCircle className="spin" />
+                ) : (
+                  <ArrowRight />
+                )}
+                {submitting || active(inspection)
+                  ? "Reading file…"
+                  : "Preview selected file"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {screen === "editor" && (
+          <>
+            {reusedFrom && (
+              <div className="notice reuse-note">
+                <Copy />
+                <span>
+                  New draft from {reusedFrom.slice(0, 8)} · The original job is
+                  unchanged.
+                </span>
+              </div>
+            )}
+            <div className="source-bar">
+              <FileSpreadsheet />
+              <strong>
+                {selected ? filename(selected.key) : "Source data"}
+                {sheet ? " / " + sheet : ""}
+              </strong>
+              <span className="format-tag">
+                {selected?.key.toLowerCase().endsWith(".xlsx") ? "XLSX" : "CSV"}
+              </span>
+              <button
+                className="link"
+                disabled={processing}
+                onClick={() => go("files")}
+              >
+                Change file
+                <ChevronRight />
+              </button>
+            </div>
+            <div className="editor-layout">
+              <section className="source-data">
+                <div className="panel-head">
+                  <h2>Source preview</h2>
+                  <span>
+                    {schema.length} columns · up to{" "}
+                    {boot?.limits.preview_rows || 100} preview rows
+                  </span>
+                </div>
+                {schema.length ? (
+                  <DataTable
+                    rows={inputPreview}
+                    columns={schema}
+                    selected={columns}
+                  />
+                ) : (
+                  <div className="empty">
+                    <p>Preview the selected source to configure a job.</p>
+                    <button onClick={() => go("files")}>Select file</button>
+                  </div>
+                )}
+                <div className="table-bottom">
+                  <span>Previewing {inputPreview.length} rows</span>
+                  <span>
+                    <LockKeyhole />
+                    Read-only
+                  </span>
+                </div>
+              </section>
+              <section
+                className="configuration"
+                aria-label="Transformation configuration"
+              >
+                <div className="panel-head">
+                  <h2>Transformation</h2>
+                </div>
+                <form
+                  className="config-body"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const issue = validateDraft();
+                    if (issue) setError(issue);
+                    else {
+                      setError("");
+                      setDialog("review");
+                    }
+                  }}
+                >
+                  <div
+                    className="operation-tabs"
+                    role="group"
+                    aria-label="Transformation type"
+                  >
+                    {(
+                      [
+                        ["regex_replace", "Replace"],
+                        ["regex_extract", "Extract"],
+                        ["normalize", "Standardize"],
+                      ] as [Operation, string][]
+                    ).map(([value, label]) => (
+                      <button
+                        type="button"
+                        key={value}
+                        className={operation === value ? "is-active" : ""}
+                        aria-pressed={operation === value}
+                        onClick={() => {
+                          setOperation(value);
+                          setPrompt("");
+                          setError("");
+                          if (value === "regex_extract")
+                            setColumns((old) => old.slice(0, 1));
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <fieldset className="field target-field">
+                    <legend>
+                      {operation === "regex_extract"
+                        ? "Source column"
+                        : "Columns to update"}
+                    </legend>
+                    <div className="column-checks">
+                      {schema.map((column) => (
+                        <label
+                          key={column.name}
+                          className={
+                            columns.includes(column.name) ? "chosen" : ""
                           }
-                        />
-                      </label>
-                      <label>
-                        AWS Access Key
-                        <input
-                          required
-                          name="access_key"
-                          placeholder="Enter your access key"
-                          autoComplete="off"
-                          spellCheck={false}
-                          value={credentials.access_key}
-                          onChange={(e) =>
-                            setCredentials({
-                              ...credentials,
-                              access_key: e.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                      <label>
-                        AWS Secret Key
-                        <div className="input-icon">
+                        >
                           <input
-                            required
-                            type="password"
-                            name="secret_key"
-                            placeholder="Enter your secret key"
-                            autoComplete="new-password"
-                            value={credentials.secret_key}
-                            onChange={(e) =>
-                              setCredentials({
-                                ...credentials,
-                                secret_key: e.target.value,
-                              })
+                            type={
+                              operation === "regex_extract"
+                                ? "radio"
+                                : "checkbox"
+                            }
+                            name="target-columns"
+                            value={column.name}
+                            checked={columns.includes(column.name)}
+                            onChange={() =>
+                              setColumns((old) =>
+                                operation === "regex_extract"
+                                  ? [column.name]
+                                  : old.includes(column.name)
+                                    ? old.filter((name) => name !== column.name)
+                                    : [...old, column.name].slice(0, 50),
+                              )
                             }
                           />
-                          <LockKeyhole size={15} />
-                        </div>
-                      </label>
-                      <label>
-                        Bucket region
-                        <input
-                          required
-                          list="regions"
-                          value={credentials.region}
-                          onChange={(e) =>
-                            setCredentials({
-                              ...credentials,
-                              region: e.target.value,
-                            })
-                          }
-                        />
-                        <datalist id="regions">
-                          {[
-                            "us-east-1",
-                            "us-west-2",
-                            "ap-southeast-2",
-                            "eu-west-1",
-                            "ap-southeast-1",
-                          ].map((r) => (
-                            <option key={r} value={r} />
-                          ))}
-                        </datalist>
+                          {column.name}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <div className="field">
+                    <div className="field-label">
+                      <label htmlFor="instruction">
+                        {operation === "regex_replace"
+                          ? "Describe what to find"
+                          : operation === "regex_extract"
+                            ? "Describe what to extract"
+                            : "Describe the formatting"}
                       </label>
                       <button
                         type="button"
-                        className="advanced-toggle"
-                        aria-expanded={advanced}
-                        onClick={() => setAdvanced(!advanced)}
+                        className="link example"
+                        onClick={() => setPrompt(examples[operation])}
                       >
-                        Temporary AWS credentials <ChevronDown size={14} />
+                        Use example
                       </button>
-                      {advanced && (
-                        <label>
-                          Session token{" "}
-                          <span className="optional">optional</span>
-                          <input
-                            type="password"
-                            autoComplete="off"
-                            value={credentials.session_token}
-                            onChange={(e) =>
-                              setCredentials({
-                                ...credentials,
-                                session_token: e.target.value,
-                              })
-                            }
-                          />
-                        </label>
-                      )}
-                      <button
-                        className="button primary wide"
-                        disabled={connecting || !ready}
-                      >
-                        {connecting ? (
-                          <LoaderCircle size={16} className="spin" />
-                        ) : (
-                          <PlugZap size={16} />
-                        )}
-                        {connecting ? "Connecting securely…" : "Connect bucket"}
-                        {!connecting && <ArrowRight size={16} />}
-                      </button>
-                      <div className="security-note">
-                        <ShieldCheck size={14} />
-                        <span>
-                          Encrypted credentials. Read-only source access.
-                        </span>
-                      </div>
-                    </form>
-                  ) : (
-                    <div className="connected-content">
-                      <div className="bucket-connected">
-                        <span className="bucket-icon">
-                          <Cloud size={21} />
-                        </span>
-                        <div>
-                          <strong>{connection.bucket}</strong>
-                          <span>
-                            <span className="tiny-dot" /> Connected ·{" "}
-                            {connection.region}
-                          </span>
-                        </div>
-                        <button
-                          className="icon-button"
-                          title="Disconnect this bucket"
-                          disabled={processing}
-                          onClick={() => {
-                            void api
-                              .disconnect(connection.id)
-                              .then(() => {
-                                setConnections((old) =>
-                                  old.filter((c) => c.id !== connection.id),
-                                );
-                                setConnection(null);
-                                setFiles([]);
-                                setSelected(null);
-                                setInspection(null);
-                              })
-                              .catch(report);
-                          }}
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                      <form
-                        className="prefix-search"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          void loadFiles(connection, prefix);
-                        }}
-                      >
-                        <Search size={15} />
+                    </div>
+                    <textarea
+                      id="instruction"
+                      spellCheck={false}
+                      maxLength={4000}
+                      rows={4}
+                      placeholder={"e.g. " + examples[operation]}
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                    />
+                  </div>
+                  {operation === "regex_replace" ? (
+                    <div className="field">
+                      <label htmlFor="replacement">Replacement text</label>
+                      <input
+                        id="replacement"
+                        maxLength={4000}
+                        placeholder="e.g. REDACTED"
+                        value={replacement}
+                        disabled={removeMatches}
+                        onChange={(e) => setReplacement(e.target.value)}
+                      />
+                      <label className="remove-option">
                         <input
-                          aria-label="S3 path prefix"
-                          placeholder="Browse a path prefix…"
-                          value={prefix}
-                          onChange={(e) => setPrefix(e.target.value)}
+                          type="checkbox"
+                          checked={removeMatches}
+                          onChange={(e) => setRemoveMatches(e.target.checked)}
                         />
-                        <button
-                          aria-label="Search files"
-                          disabled={loadingFiles}
-                        >
-                          <ArrowRight size={16} />
-                        </button>
-                      </form>
-                      <div className="file-list-heading">
-                        <span>BUCKET FILES</span>
-                        <span>{files.length} loaded</span>
-                      </div>
-                      <div className="file-list">
-                        {!files.length ? (
-                          <div className="compact-empty">
-                            <FolderOpen size={24} />
-                            <p>
-                              {loadingFiles
-                                ? "Loading files…"
-                                : "No files in this path."}
-                            </p>
-                          </div>
-                        ) : (
-                          files.map((file) => (
-                            <button
-                              key={file.key}
-                              className={`file-item ${selected?.key === file.key ? "chosen" : ""}`}
-                              disabled={!file.supported || processing}
-                              onClick={() => chooseFile(file)}
-                              title={file.key}
-                            >
-                              <span
-                                className={`file-icon ${file.key.toLowerCase().endsWith(".xlsx") ? "excel" : ""}`}
-                              >
-                                <FileSpreadsheet size={19} />
-                              </span>
-                              <span className="file-copy">
-                                <strong>{filename(file.key)}</strong>
-                                <small>
-                                  {formatBytes(file.size)} ·{" "}
-                                  {file.supported
-                                    ? file.key
-                                    : "Unsupported format"}
-                                </small>
-                              </span>
-                              {selected?.key === file.key && (
-                                <CheckCircle2 size={17} />
-                              )}
-                            </button>
-                          ))
-                        )}
-                      </div>
-                      {fileCursor && (
-                        <button
-                          className="text-button load-more"
-                          disabled={loadingFiles}
-                          onClick={() =>
-                            void loadFiles(connection, prefix, fileCursor, true)
-                          }
-                        >
-                          {loadingFiles ? "Loading…" : "Load more files"}
-                        </button>
-                      )}
-                      {selected && (
-                        <div className="file-options">
-                          {selected.key.toLowerCase().endsWith(".csv") && (
-                            <div className="form-row">
-                              <label>
-                                Delimiter
-                                <select
-                                  value={delimiter}
-                                  disabled={processing}
-                                  onChange={(e) => {
-                                    setDelimiter(e.target.value);
-                                    setInspection(null);
-                                    setColumns([]);
-                                  }}
-                                >
-                                  <option value=",">Comma (,)</option>
-                                  <option value=";">Semicolon (;)</option>
-                                  <option value={"\t"}>Tab</option>
-                                  <option value="|">Pipe (|)</option>
-                                </select>
-                              </label>
-                              <label>
-                                Encoding
-                                <select
-                                  value={encoding}
-                                  disabled={processing}
-                                  onChange={(e) => {
-                                    setEncoding(e.target.value);
-                                    setInspection(null);
-                                    setColumns([]);
-                                  }}
-                                >
-                                  <option>UTF-8</option>
-                                  <option>UTF-16</option>
-                                  <option>ISO-8859-1</option>
-                                </select>
-                              </label>
-                            </div>
-                          )}
-                          {!!inspection?.metadata?.sheets?.length && (
-                            <label>
-                              Worksheet
-                              <select
-                                value={sheet || inspection.metadata.sheet || ""}
-                                disabled={processing}
-                                onChange={(e) => {
-                                  setSheet(e.target.value);
-                                  setColumns([]);
-                                  setInspection((old) =>
-                                    old
-                                      ? {
-                                          ...old,
-                                          metadata: {
-                                            ...old.metadata,
-                                            requires_sheet: true,
-                                            columns: [],
-                                            preview: [],
-                                          },
-                                        }
-                                      : null,
-                                  );
-                                }}
-                              >
-                                <option value="" disabled>
-                                  Select a worksheet…
-                                </option>
-                                {inspection.metadata.sheets.map((name) => (
-                                  <option key={name}>{name}</option>
-                                ))}
-                              </select>
-                            </label>
-                          )}
-                          <button
-                            className="button secondary wide"
-                            disabled={
-                              submitting ||
-                              processing ||
-                              (!!inspection?.metadata?.requires_sheet && !sheet)
-                            }
-                            onClick={() => void inspectFile()}
-                          >
-                            {active(inspection) ? (
-                              <LoaderCircle size={15} className="spin" />
-                            ) : (
-                              <Search size={15} />
-                            )}
-                            {active(inspection)
-                              ? "Inspecting file…"
-                              : schema.length
-                                ? "Refresh preview"
-                                : "Inspect selected file"}
-                          </button>
-                          {inspection?.status === "FAILED" && (
-                            <p className="inline-error">
-                              {inspection.error?.message}
-                            </p>
-                          )}
-                          {active(inspection) && (
-                            <button
-                              className="text-button"
-                              onClick={() => void cancel(inspection!)}
-                            >
-                              Cancel inspection
-                            </button>
-                          )}
-                        </div>
-                      )}
+                        Remove matched text instead
+                      </label>
                     </div>
+                  ) : operation === "regex_extract" ? (
+                    <div className="field">
+                      <label htmlFor="new-column">New column name</label>
+                      <input
+                        id="new-column"
+                        maxLength={128}
+                        placeholder="e.g. order_id"
+                        value={newColumn}
+                        onChange={(e) => setNewColumn(e.target.value)}
+                      />
+                      <small>
+                        First match only. The source column is kept.
+                      </small>
+                    </div>
+                  ) : (
+                    <p className="muted">
+                      Supports whitespace cleanup and letter case.
+                    </p>
                   )}
-                  <div className="card-footnote">
-                    <FileSpreadsheet size={14} />
-                    CSV and Excel (.xlsx)
-                    <span>Source files stay unchanged</span>
-                  </div>
-                </section>
-
-                <section className="card transform-card">
-                  <div className="card-header">
-                    <div>
-                      <span className="section-kicker">
-                        02 / TRANSFORMATION
-                      </span>
-                      <h2>
-                        <Sparkles size={19} />
-                        Describe it. Transform it.
-                      </h2>
-                    </div>
-                    <span className="ai-label">AI ASSISTED</span>
-                  </div>
-                  <form onSubmit={submit}>
-                    <fieldset disabled={processing || submitting}>
-                      <div className="operation-tabs">
-                        {operations.map((item) => (
-                          <button
-                            type="button"
-                            key={item.id}
-                            className={
-                              operation === item.id
-                                ? "operation active"
-                                : "operation"
-                            }
-                            onClick={() => {
-                              setOperation(item.id);
-                              setPrompt("");
-                              if (item.id === "regex_extract")
-                                setColumns((old) => old.slice(0, 1));
-                              submitKey.current = crypto.randomUUID();
-                            }}
-                          >
-                            <item.icon size={17} />
-                            <span>{item.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <div className="transformation-form">
-                        <label>
-                          What would you like to{" "}
-                          {operation === "normalize"
-                            ? "standardize"
-                            : operation === "regex_extract"
-                              ? "extract"
-                              : "find"}
-                          ?
-                          <textarea
-                            required
-                            minLength={3}
-                            maxLength={4000}
-                            value={prompt}
-                            onChange={(e) => {
-                              setPrompt(e.target.value);
-                              submitKey.current = crypto.randomUUID();
-                            }}
-                            placeholder={
-                              operation === "regex_replace"
-                                ? "e.g. Find all email addresses in the selected columns"
-                                : operation === "regex_extract"
-                                  ? "e.g. Extract the first order ID starting with ORD-"
-                                  : "e.g. Trim extra whitespace and convert names to lowercase"
-                            }
-                          />
-                          <span className="textarea-caption">
-                            <Sparkles size={12} />
-                            Describe the rule in your own words
-                            <span>{prompt.length}/4000</span>
-                          </span>
-                        </label>
-                        <div className="suggestions">
-                          <span>Try</span>
-                          {suggestions[operation].map((item) => (
-                            <button
-                              type="button"
-                              key={item.label}
-                              onClick={() => {
-                                setPrompt(item.text);
-                                submitKey.current = crypto.randomUUID();
-                              }}
-                            >
-                              {item.label}
-                              <ArrowUpRight size={11} />
-                            </button>
-                          ))}
-                        </div>
-                        <div className="field-heading">
-                          <label>
-                            Target{" "}
-                            {operation === "regex_extract"
-                              ? "column"
-                              : "columns"}
-                          </label>
-                          {schema.length > 0 &&
-                            operation !== "regex_extract" && (
-                              <button
-                                type="button"
-                                className="text-button"
-                                onClick={() =>
-                                  setColumns(
-                                    columns.length === schema.length
-                                      ? []
-                                      : schema.map((c) => c.name),
-                                  )
-                                }
-                              >
-                                {columns.length === schema.length
-                                  ? "Clear all"
-                                  : "Select all"}
-                              </button>
-                            )}
-                        </div>
-                        {!schema.length ? (
-                          <div className="column-placeholder">
-                            <Database size={16} />
-                            Connect and inspect a file to choose columns.
-                          </div>
-                        ) : (
-                          <div className="column-options">
-                            {schema.map((col) => (
-                              <label
-                                className={`column-choice ${columns.includes(col.name) ? "checked" : ""}`}
-                                key={col.name}
-                              >
-                                <input
-                                  type={
-                                    operation === "regex_extract"
-                                      ? "radio"
-                                      : "checkbox"
-                                  }
-                                  name="target-columns"
-                                  checked={columns.includes(col.name)}
-                                  onChange={() =>
-                                    setColumns((old) =>
-                                      operation === "regex_extract"
-                                        ? [col.name]
-                                        : old.includes(col.name)
-                                          ? old.filter(
-                                              (name) => name !== col.name,
-                                            )
-                                          : [...old, col.name],
-                                    )
-                                  }
-                                />
-                                <span className="type-mark">Aa</span>
-                                {col.name}
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                        {operation === "regex_replace" && (
-                          <label>
-                            Replace with{" "}
-                            <span className="optional">
-                              leave empty to remove matches
-                            </span>
-                            <input
-                              maxLength={4000}
-                              value={replacement}
-                              onChange={(e) => {
-                                setReplacement(e.target.value);
-                                submitKey.current = crypto.randomUUID();
-                              }}
-                              placeholder="Replacement text"
-                            />
-                          </label>
-                        )}
-                        {operation === "regex_extract" && (
-                          <label>
-                            New column name
-                            <input
-                              required
-                              pattern="[\w][\w .-]{0,127}"
-                              value={newColumn}
-                              onChange={(e) => setNewColumn(e.target.value)}
-                            />
-                            <span className="helper">
-                              The first match becomes a new column. Original
-                              data is preserved.
-                            </span>
-                          </label>
-                        )}
-                        {operation === "normalize" && (
-                          <div className="normalization-note">
-                            <CheckCircle2 size={15} />
-                            Supports trimming, whitespace cleanup, lowercase and
-                            uppercase.
-                          </div>
-                        )}
-                        <div className="run-summary">
-                          <div>
-                            <span className="run-icon">
-                              <Layers3 size={17} />
-                            </span>
-                            <div>
-                              <strong>
-                                {selected
-                                  ? filename(selected.key)
-                                  : "Ready when you are"}
-                              </strong>
-                              <span>
-                                {columns.length
-                                  ? `${columns.length} target column${columns.length > 1 ? "s" : ""} · ${transformation.title}`
-                                  : "Select a source file and target columns"}
-                              </span>
-                            </div>
-                          </div>
-                          <button
-                            className="button primary"
-                            disabled={
-                              !ready ||
-                              !boot?.llm_configured ||
-                              !schema.length ||
-                              !columns.length ||
-                              !prompt.trim() ||
-                              processing ||
-                              submitting
-                            }
-                          >
-                            {submitting ? (
-                              <LoaderCircle size={15} className="spin" />
-                            ) : (
-                              <Play size={14} fill="currentColor" />
-                            )}
-                            {submitting ? "Submitting…" : "Run transformation"}
-                          </button>
-                        </div>
-                        <p className="run-note">
-                          <ShieldCheck size={13} />
-                          Rules are validated before they run. Your job
-                          continues in the background.
-                        </p>
-                      </div>
-                    </fieldset>
-                  </form>
-                </section>
-              </div>
-
-              {current && (
-                <section className="card job-card" aria-live="polite">
-                  <div className="job-header">
-                    <div
-                      className={`job-symbol ${current.status.toLowerCase()}`}
+                  <div className="config-bottom">
+                    <button
+                      type="submit"
+                      className="primary"
+                      disabled={submitting || processing || !schema.length}
                     >
-                      {active(current) ? (
-                        <LoaderCircle size={21} className="spin" />
-                      ) : current.status === "SUCCESS" ? (
-                        <CheckCircle2 size={22} />
-                      ) : (
-                        <Square size={20} />
-                      )}
-                    </div>
-                    <div className="job-title">
-                      <h3>{stageLabels[current.stage] || current.stage}</h3>
-                      <span>
-                        {filename(current.source_key)} · Job{" "}
-                        {current.id.slice(0, 8)} · Attempt{" "}
-                        {current.attempt || 1}
-                        {current.status === "SUCCESS" &&
-                        job?.metadata?.cache_hit
-                          ? " · Cached rule"
-                          : ""}
-                      </span>
-                    </div>
-                    <Status job={current} />
-                    {active(current) && (
-                      <button
-                        className="button secondary small"
-                        disabled={current.cancel_requested}
-                        onClick={() => void cancel(current)}
-                      >
-                        <Square size={12} />
-                        {current.cancel_requested
-                          ? "Cancelling…"
-                          : "Cancel job"}
-                      </button>
-                    )}
+                      Review job
+                      <ArrowRight />
+                    </button>
                   </div>
-                  {active(current) && (
-                    <>
-                      <div className="progress-track">
-                        <div style={{ width: `${current.progress}%` }} />
-                      </div>
-                      <div className="progress-caption">
-                        <span>Stage-based estimate · {current.progress}%</span>
-                        <span>
-                          You can leave this page and return to Activity.
-                        </span>
-                      </div>
-                    </>
-                  )}
-                  {current.error && (
-                    <div className="job-error">
-                      <strong>{current.error.code}</strong>
-                      <p>{current.error.message}</p>
-                    </div>
-                  )}
-                  {job?.plan?.explanation && (
-                    <div className="rule-preview">
-                      <div>
-                        <Code2 size={15} />
-                        <strong>Validated rule</strong>
-                        {job.metadata?.cache_hit && (
-                          <span className="subtle-badge">CACHE HIT</span>
-                        )}
-                        <button
-                          className="icon-button"
-                          aria-label="Copy validated rule"
-                          onClick={() => {
-                            void navigator.clipboard
-                              .writeText(
-                                job.plan?.pattern ||
-                                  job.plan?.steps.join(" → ") ||
-                                  "",
-                              )
-                              .then(() => {
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 1500);
-                              })
-                              .catch(report);
-                          }}
+                </form>
+              </section>
+            </div>
+          </>
+        )}
+
+        {screen === "job" && job && (
+          <>
+            <div className="job-links">
+              <button className="quiet" onClick={() => go("history")}>
+                <ArrowLeft />
+                Back to jobs
+              </button>
+            </div>
+            {job.error && (
+              <div className="notice danger">
+                <CircleAlert />
+                <div>
+                  <strong>{job.error.message}</strong>
+                  <p>
+                    Check source permissions and your instruction, then reuse
+                    this configuration to create a new job.
+                  </p>
+                  <small>Error code: {job.error.code}</small>
+                </div>
+              </div>
+            )}
+            {job.stage === "RETRYING" && (
+              <div className="notice warning">
+                <RefreshCw />
+                <span>
+                  Temporary service problem. We will retry automatically; do not
+                  submit a duplicate job.
+                </span>
+              </div>
+            )}
+            {job.status === "CANCELLED" && (
+              <div className="notice">
+                <CircleAlert />
+                <span>
+                  Job cancelled. No result was published. The original file is
+                  unchanged.
+                </span>
+              </div>
+            )}
+            {resultExpired(job) && (
+              <div className="notice warning">
+                <Clock3 />
+                <span>
+                  This job succeeded, but its results have expired. The record
+                  and configuration remain available.
+                </span>
+              </div>
+            )}
+            <div className="job-layout">
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Progress</h2>
+                  <span>Attempt {Math.max(1, job.attempt)} of 3</span>
+                </div>
+                <div className="panel-body">
+                  <div className="progress-row">
+                    <span>
+                      {job.cancel_requested && active(job)
+                        ? "Stopping computation"
+                        : stageLabels[job.stage] || job.stage}
+                    </span>
+                    <span>{job.progress}%</span>
+                  </div>
+                  <div
+                    className="track"
+                    role="progressbar"
+                    aria-label="Estimated progress"
+                    aria-valuenow={job.progress}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <div
+                      className="fill"
+                      style={{ width: job.progress + "%" }}
+                    />
+                  </div>
+                  <ol className="timeline">
+                    {stages.map((stage, index) => {
+                      const current = stage === job.stage,
+                        done =
+                          job.status === "SUCCESS" ||
+                          stages.indexOf(job.stage) > index;
+                      return (
+                        <li
+                          key={stage}
+                          className={done ? "done" : current ? "current" : ""}
                         >
-                          {copied ? <Check size={15} /> : <Copy size={15} />}
-                        </button>
-                      </div>
+                          <span>
+                            {done ? (
+                              <Check />
+                            ) : current && active(job) ? (
+                              <LoaderCircle className="spin" />
+                            ) : (
+                              <Circle />
+                            )}
+                          </span>
+                          <span>{stageLabels[stage]}</span>
+                          <small>
+                            {done
+                              ? "Done"
+                              : current
+                                ? active(job)
+                                  ? "In progress"
+                                  : "Stopped"
+                                : ""}
+                          </small>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                  <p className="inline-note">
+                    <Info />
+                    Estimated progress, based on the current stage.
+                  </p>
+                  {job.status === "SUCCESS" && !resultExpired(job) && (
+                    <button className="primary" onClick={() => go("results")}>
+                      View results
+                      <ArrowRight />
+                    </button>
+                  )}
+                </div>
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Configuration</h2>
+                </div>
+                <div className="panel-body">
+                  <dl className="key-values">
+                    <dt>Source</dt>
+                    <dd>
+                      {job.source_key}
+                      {jobConfig.sheet ? " / " + jobConfig.sheet : ""}
+                    </dd>
+                    <dt>Operation</dt>
+                    <dd>
+                      {operationLabel(
+                        String(jobConfig.operation || job.operation || ""),
+                      )}
+                    </dd>
+                    <dt>Columns</dt>
+                    <dd>
+                      {((jobConfig.target_columns as string[]) || []).join(
+                        ", ",
+                      )}
+                    </dd>
+                    {jobConfig.operation === "regex_replace" && (
+                      <>
+                        <dt>Replace with</dt>
+                        <dd>
+                          {jobConfig.replacement === ""
+                            ? "Remove matched text"
+                            : String(jobConfig.replacement)}
+                        </dd>
+                      </>
+                    )}
+                    {jobConfig.operation === "regex_extract" && (
+                      <>
+                        <dt>New column</dt>
+                        <dd>{String(jobConfig.new_column)}</dd>
+                      </>
+                    )}
+                    <dt>Created</dt>
+                    <dd>{dateLabel(job.created_at)}</dd>
+                    <dt>Duration</dt>
+                    <dd>{durationLabel(job)}</dd>
+                  </dl>
+                  <div className="prompt-summary">
+                    <h3>Instruction</h3>
+                    <p>{String(jobConfig.prompt || "")}</p>
+                  </div>
+                  {job.plan && (job.plan.pattern || job.plan.steps?.length) && (
+                    <details className="validated-rule">
+                      <summary>
+                        Validated rule{" "}
+                        {job.metadata?.cache_hit ? "· cached" : ""}
+                      </summary>
                       <code>
-                        {job.plan.pattern || job.plan.steps.join(" → ")}
+                        {job.plan.pattern || job.plan.steps?.join(" → ")}
                       </code>
                       <p>{job.plan.explanation}</p>
-                    </div>
+                    </details>
                   )}
-                </section>
-              )}
+                </div>
+              </section>
+            </div>
+          </>
+        )}
 
-              <section className="card results-card">
-                <div className="card-header">
-                  <div>
-                    <span className="section-kicker">03 / YOUR DATA</span>
-                    <h2>
-                      <FileSpreadsheet size={19} />
-                      {page ? "Processed results" : "Data preview"}
-                      {tableColumns.length > 0 && (
-                        <span className="subtle-badge">
-                          {page
-                            ? `${page.total_rows.toLocaleString()} ROWS`
-                            : "FIRST 100 ROWS"}
-                        </span>
-                      )}
-                    </h2>
+        {screen === "results" && job && (
+          <>
+            <div className="job-links">
+              <button className="quiet" onClick={() => go("history")}>
+                <ArrowLeft />
+                Back to jobs
+              </button>
+              <button className="quiet" onClick={() => requestReuse(job)}>
+                <Copy />
+                Reuse configuration
+              </button>
+            </div>
+            {resultExpired(job) ? (
+              <section className="panel">
+                <div className="empty">
+                  <Clock3 />
+                  <h2>Results are no longer available</h2>
+                  <p>
+                    The job record is kept. Reuse its configuration to generate
+                    new results.
+                  </p>
+                  <button className="primary" onClick={() => requestReuse(job)}>
+                    <Copy />
+                    Reuse configuration
+                  </button>
+                </div>
+              </section>
+            ) : (
+              <>
+                <div className="job-complete">
+                  <Check />
+                  <strong>Job completed</strong>
+                  <button className="link" onClick={() => go("job")}>
+                    Job details
+                    <ArrowRight />
+                  </button>
+                </div>
+                {changed === 0 && (
+                  <div className="notice">
+                    <Info />
+                    <span>
+                      No values were changed or extracted. All original rows
+                      remain in the result.
+                    </span>
                   </div>
-                  {page && (
-                    <span className="results-success">
-                      <CheckCircle2 size={15} />
-                      {changed.toLocaleString()} cells changed
+                )}
+                <div className="result-info">
+                  <span>
+                    <strong>
+                      {(
+                        job.metadata?.row_count ||
+                        page?.total_rows ||
+                        0
+                      ).toLocaleString()}
+                    </strong>{" "}
+                    rows processed
+                  </span>
+                  <span>
+                    <strong>{changed.toLocaleString()}</strong>{" "}
+                    {jobConfig.operation === "regex_extract"
+                      ? "rows extracted"
+                      : "cells updated"}
+                  </span>
+                  {job.result_expires_at && (
+                    <span className="retention">
+                      <Clock3 />
+                      Available until {dateLabel(job.result_expires_at)}
                     </span>
                   )}
                 </div>
-                {!tableColumns.length ? (
-                  <div className="empty-state results-empty">
-                    <div className="empty-grid">
-                      <FileSpreadsheet size={26} />
-                      <span />
-                      <span />
-                      <span />
-                    </div>
-                    <h3>A clearer view of your data starts here.</h3>
-                    <p>
-                      Inspect a file to preview its columns.
-                      <br />
-                      Your processed results will appear here when the job is
-                      complete.
-                    </p>
-                    <div className="empty-features">
-                      <span>
-                        <Check size={12} />
-                        Safe previews
-                      </span>
-                      <span>
-                        <Check size={12} />
-                        Paginated results
-                      </span>
-                      <span>
-                        <Check size={12} />
-                        Millions of rows
-                      </span>
+                <section className="panel">
+                  <div className="result-toolbar">
+                    <h2>Data</h2>
+                    <div
+                      className="segment"
+                      role="group"
+                      aria-label="Data view"
+                    >
+                      <button
+                        className={dataView === "result" ? "is-active" : ""}
+                        aria-pressed={dataView === "result"}
+                        onClick={() => setDataView("result")}
+                      >
+                        Result
+                      </button>
+                      <button
+                        disabled={!schema.length}
+                        className={dataView === "original" ? "is-active" : ""}
+                        aria-pressed={dataView === "original"}
+                        onClick={() => setDataView("original")}
+                      >
+                        Original preview
+                      </button>
                     </div>
                   </div>
-                ) : (
-                  <>
-                    {tableRows.length ? (
-                      <DataTable
-                        rows={tableRows}
-                        columns={tableColumns}
-                        selected={columns}
-                      />
-                    ) : (
-                      <div className="compact-empty">
-                        <Database size={25} />
-                        <p>This dataset has columns but no data rows.</p>
+                  {dataView === "original" ? (
+                    <>
+                      <div className="table-hint">
+                        Bounded source preview only. Result rows may be in a
+                        different order; this is not a row-by-row comparison.
                       </div>
-                    )}
-                    <div className="pagination">
-                      <span>
-                        {page
-                          ? `Showing ${page.total_rows ? page.offset + 1 : 0}–${page.offset + page.returned_rows} of ${page.total_rows.toLocaleString()} rows`
-                          : `${tableRows.length} sample rows · Preview is not the full dataset`}
-                      </span>
-                      {page && (
-                        <div>
-                          <label>
+                      <DataTable rows={inputPreview} columns={schema} />
+                      <div className="table-bottom">
+                        {inputPreview.length} original preview rows · Read-only
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {loadingPage ? (
+                        <div className="empty compact" role="status">
+                          <LoaderCircle className="spin" />
+                          Loading result page…
+                        </div>
+                      ) : page ? (
+                        <DataTable
+                          rows={page.rows}
+                          columns={page.columns}
+                          selected={
+                            (jobConfig.target_columns as string[]) || []
+                          }
+                          offset={page.offset}
+                        />
+                      ) : (
+                        <div className="empty compact">
+                          <p>Result data is not loaded.</p>
+                          <button onClick={() => void loadPage(job, "", 0)}>
+                            Retry loading
+                          </button>
+                        </div>
+                      )}
+                      <div className="table-bottom">
+                        <span>
+                          {page
+                            ? (page.returned_rows ? page.offset + 1 : 0) +
+                              "–" +
+                              (page.offset + page.returned_rows) +
+                              " of " +
+                              page.total_rows.toLocaleString() +
+                              " rows"
+                            : "Loading…"}
+                        </span>
+                        <div
+                          className="pagination"
+                          aria-label="Results pagination"
+                        >
+                          <label className="page-size">
                             Rows
                             <select
                               aria-label="Rows per page"
@@ -1623,169 +1893,257 @@ export default function App() {
                                 setPageSize(Number(e.target.value))
                               }
                             >
-                              <option value={25}>25</option>
-                              <option value={100}>100</option>
-                              <option value={500}>500</option>
+                              {[25, 100, 250, 500].map((size) => (
+                                <option key={size}>{size}</option>
+                              ))}
                             </select>
                           </label>
                           <button
                             className="icon-button"
-                            aria-label="Previous result page"
-                            disabled={loadingPage || !pageNumber}
-                            onClick={() => {
-                              if (job)
-                                void loadPage(
-                                  job,
-                                  cursors[pageNumber - 1],
-                                  pageNumber - 1,
-                                );
-                            }}
+                            aria-label="Previous page"
+                            disabled={pageNumber === 0 || loadingPage}
+                            onClick={() =>
+                              void loadPage(
+                                job,
+                                cursors[pageNumber - 1],
+                                pageNumber - 1,
+                              )
+                            }
                           >
-                            <ChevronLeft size={17} />
+                            <ChevronLeft />
                           </button>
-                          <span>
-                            {loadingPage ? (
-                              <LoaderCircle size={15} className="spin" />
-                            ) : (
-                              `Page ${pageNumber + 1}`
-                            )}
-                          </span>
+                          <span>Page {pageNumber + 1}</span>
                           <button
                             className="icon-button"
-                            aria-label="Next result page"
-                            disabled={loadingPage || !page.next_cursor}
+                            aria-label="Next page"
+                            disabled={!page?.next_cursor || loadingPage}
                             onClick={() => {
-                              if (job && page.next_cursor) {
-                                const next = [
-                                  ...cursors.slice(0, pageNumber + 1),
-                                  page.next_cursor,
-                                ];
-                                setCursors(next);
-                                void loadPage(
-                                  job,
-                                  page.next_cursor,
-                                  pageNumber + 1,
-                                );
-                              }
+                              if (!page?.next_cursor) return;
+                              setCursors([
+                                ...cursors.slice(0, pageNumber + 1),
+                                page.next_cursor,
+                              ]);
+                              void loadPage(
+                                job,
+                                page.next_cursor,
+                                pageNumber + 1,
+                              );
                             }}
                           >
-                            <ChevronRight size={17} />
+                            <ChevronRight />
                           </button>
                         </div>
-                      )}
-                    </div>
-                    {page && job?.result_expires_at && (
-                      <div className="retention-note">
-                        <Clock3 size={12} />
-                        Results available until{" "}
-                        {new Date(job.result_expires_at).toLocaleString()}.
-                        Original S3 data is unchanged.
                       </div>
-                    )}
+                    </>
+                  )}
+                </section>
+                <p className="inline-note">
+                  <LockKeyhole />
+                  Source unchanged. Blue columns indicate transformation
+                  targets, not a cell-by-cell diff.
+                </p>
+              </>
+            )}
+          </>
+        )}
+      </main>
+      <footer className="statusbar">
+        <span>
+          {connection ? (
+            <>
+              <span className="status-dot" />
+              Connected to {connection.bucket}
+            </>
+          ) : (
+            "No active connection"
+          )}
+        </span>
+        <span>Source files remain unchanged</span>
+      </footer>
+      {toast && (
+        <div className="toast" role="status">
+          {toast}
+        </div>
+      )}
+      {dialog && (
+        <Modal
+          title={
+            {
+              help: "Clearflow help",
+              review: "Review job",
+              cancel: "Cancel this job?",
+              disconnect: "Disconnect from S3?",
+              discard: "Replace the current draft?",
+            }[dialog]
+          }
+          onClose={() => {
+            if (!submitting) setDialog(null);
+          }}
+          actions={
+            dialog === "help" ? (
+              <button className="primary" onClick={() => setDialog(null)}>
+                Got it
+              </button>
+            ) : (
+              <>
+                <button disabled={submitting} onClick={() => setDialog(null)}>
+                  Keep{" "}
+                  {dialog === "cancel"
+                    ? "running"
+                    : dialog === "discard"
+                      ? "draft"
+                      : dialog === "disconnect"
+                        ? "connection"
+                        : "editing"}
+                </button>
+                <button
+                  className={
+                    dialog === "cancel" || dialog === "disconnect"
+                      ? "danger-button"
+                      : "primary"
+                  }
+                  disabled={submitting}
+                  onClick={() => {
+                    if (dialog === "review") void submit();
+                    else if (dialog === "cancel") void cancel();
+                    else if (dialog === "disconnect") void disconnect();
+                    else {
+                      setDialog(null);
+                      const action = pendingAction.current;
+                      pendingAction.current = null;
+                      action?.();
+                    }
+                  }}
+                >
+                  {submitting && <LoaderCircle className="spin" />}
+                  {dialog === "review"
+                    ? "Run job"
+                    : dialog === "cancel"
+                      ? "Cancel job"
+                      : dialog === "disconnect"
+                        ? "Disconnect"
+                        : "Replace draft"}
+                </button>
+              </>
+            )
+          }
+        >
+          {dialog === "help" ? (
+            <>
+              <p>
+                Connect your own Amazon S3 bucket, preview a CSV or Excel
+                worksheet, choose columns and describe a transformation. Review
+                the configuration before running the job.
+              </p>
+              <h3>Processing service status</h3>
+              <div className="service-list">
+                {["database", "queue", "worker", "spark", "llm_configured"].map(
+                  (name) => (
+                    <div key={name}>
+                      <span>
+                        {
+                          {
+                            database: "Database",
+                            queue: "Task queue",
+                            worker: "Processing worker",
+                            spark: "Spark connection",
+                            llm_configured: "Model configured",
+                          }[name]
+                        }
+                      </span>
+                      <span
+                        className={
+                          services[name] ? "success-text" : "warning-text"
+                        }
+                      >
+                        {services[name] ? "Ready" : "Needs setup"}
+                      </span>
+                    </div>
+                  ),
+                )}
+              </div>
+              <p className="muted">
+                A configured model does not guarantee provider availability.
+                Actual failures are reported; results are never fabricated.
+              </p>
+              <h3>Safety and retention</h3>
+              <p>
+                Source files are read-only. Results and encrypted credentials
+                expire after {boot?.limits.result_ttl_hours || 24} hours. Jobs
+                belong to this browser session. Never include keys in a
+                recording.
+              </p>
+            </>
+          ) : dialog === "review" ? (
+            <>
+              <p>
+                Confirm your configuration. A new asynchronous job will be
+                created; your source file will not change.
+              </p>
+              <dl className="key-values">
+                <dt>Source</dt>
+                <dd>
+                  {selected?.key}
+                  {sheet ? " / " + sheet : ""}
+                </dd>
+                <dt>Operation</dt>
+                <dd>{operationLabel(operation)}</dd>
+                <dt>Columns</dt>
+                <dd>{columns.join(", ")}</dd>
+                <dt>Instruction</dt>
+                <dd>{prompt}</dd>
+                {operation === "regex_replace" && (
+                  <>
+                    <dt>Replace with</dt>
+                    <dd>
+                      {removeMatches ? "Remove matched text" : replacement}
+                    </dd>
                   </>
                 )}
-              </section>
+                {operation === "regex_extract" && (
+                  <>
+                    <dt>New column</dt>
+                    <dd>{newColumn}</dd>
+                  </>
+                )}
+              </dl>
+              <p className="inline-note">
+                <LockKeyhole />
+                Replacement is literal. No sample rows or AWS keys are sent to
+                the model.
+              </p>
             </>
+          ) : dialog === "cancel" ? (
+            <p>
+              The server will stop this{" "}
+              {cancelTarget?.kind === "inspect"
+                ? "file preview"
+                : "processing job"}
+              . No partial result will be published. Your original file remains
+              unchanged.
+            </p>
+          ) : dialog === "disconnect" ? (
+            <p>
+              Encrypted credentials will be removed. You will need to enter them
+              again for new jobs. Running jobs using this connection may fail.
+            </p>
+          ) : (
+            <p>
+              Your unsent configuration will be replaced. Existing and running
+              jobs on the server are not modified.
+            </p>
           )}
-          <footer className="page-footer">
-            <span>
-              <Layers3 size={13} />
-              PatternForge
-            </span>
-            <span>
-              From a simple instruction to a meaningful transformation.
-            </span>
-            <button className="text-button" onClick={() => setGuide(true)}>
-              Need a hand? <ArrowUpRight size={13} />
-            </button>
-          </footer>
-        </div>
-      </main>
-      {guide && (
-        <div className="modal-backdrop" onClick={() => setGuide(false)}>
-          <section
-            className="guide-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="guide-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="icon-button modal-close"
-              aria-label="Close guide"
-              onClick={() => setGuide(false)}
-            >
-              <X size={20} />
-            </button>
-            <span className="section-kicker">A LITTLE GUIDANCE</span>
-            <h2 id="guide-title">From your bucket to better data.</h2>
-            <p>Three steps. Your original files are always preserved.</p>
-            <ol>
-              <li>
-                <strong>Connect your source</strong>
-                <p>
-                  Enter credentials with permission to list your bucket and read
-                  its objects. Temporary credentials also need a session token.
-                  Choose CSV or .xlsx and inspect it.
-                </p>
-              </li>
-              <li>
-                <strong>Describe the change</strong>
-                <p>
-                  Select the columns, choose replace, extract or standardize,
-                  and describe your rule. For replacement, an empty value
-                  removes matches. Extraction creates a new column.
-                </p>
-              </li>
-              <li>
-                <strong>Follow your job</strong>
-                <p>
-                  Processing runs in the background. View status in Activity,
-                  cancel unneeded jobs, and browse the result a page at a time.
-                  Zero matches is a successful result.
-                </p>
-              </li>
-            </ol>
-            <div className="guide-privacy">
-              <ShieldCheck size={20} />
-              <div>
-                <strong>A private workspace</strong>
-                <p>
-                  Your session can only see its own jobs. Credentials are
-                  encrypted, never sent to the language model, and expire
-                  automatically. Results are kept for{" "}
-                  {boot?.limits.result_ttl_hours || 24} hours.
-                </p>
-              </div>
-            </div>
-            <details>
-              <summary>
-                <Terminal size={15} />
-                Administrator setup
-              </summary>
-              <p>
-                Run the project bootstrap, configure LLM_API_KEY and LLM_MODEL
-                in the private .env file, then start Docker Compose. For local
-                development, use the VS Code tasks in the repository. No model
-                output is fabricated when configuration is missing.
-              </p>
-              <p>
-                CSV supports up to{" "}
-                {formatBytes(boot?.limits.max_file_bytes || 2 * 1024 ** 3)};
-                Excel up to{" "}
-                {formatBytes(boot?.limits.max_excel_bytes || 100 * 1024 ** 2)}.
-                Column names must be unique. See README for deployment and
-                permissions.
-              </p>
-            </details>
-            <button
-              className="button primary wide"
-              onClick={() => setGuide(false)}
-            >
-              Back to workspace <ArrowRight size={15} />
-            </button>
-          </section>
-        </div>
+          {submitting && (
+            <p className="inline-note" role="status">
+              Submitting request…
+            </p>
+          )}
+          {error && (
+            <p className="danger-text" role="alert">
+              {error}
+            </p>
+          )}
+        </Modal>
       )}
     </div>
   );
