@@ -271,6 +271,8 @@ def test_production_health_uses_trusted_proxy_without_disabling_redirect(client,
     settings.ALLOWED_HOSTS = ["testserver", "localhost"]
     settings.SPARK_MASTER = "local[2]"
     mocker.patch("core.views.redis.Redis.from_url")
+    # SecurityMiddleware snapshots redirect settings when a handler is first constructed.
+    client = APIClient()
     insecure = client.get("/api/health", HTTP_HOST="localhost")
     assert insecure.status_code == 301
     assert insecure["Location"] == "https://localhost/api/health"
