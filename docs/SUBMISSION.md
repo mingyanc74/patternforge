@@ -37,7 +37,7 @@ The initial backlog's 3-million-row, 10-minute and 2-second response targets are
 ## Pending external resources
 
 - Real AWS credentials and a test bucket: supplied privately in the application when available.
-- Genuine model: free Qwen3 CPU model passed the expanded 10/10 small native semantic checks; complete-stack verification is separate. An external API key is optional, not required by the free-model overlay.
+- Genuine model: free Qwen3 CPU model passed the expanded 10/10 semantic checks both natively and in the [complete container verification](https://github.com/mingyanc74/patternforge/actions/runs/39429271689). That run passed the full task pipeline with synthetic S3, not real AWS or a public deployment. An external API key is optional, not required by the free-model overlay.
 - Independent Docker-capable public host and DNS hostname: Azure student account is activated, but the VM is not yet provisioned. Capacity, final configuration and credit consumption need confirmation; see AZURE_STUDENT_zh.md. Laptop tunnels are not the selected delivery mode.
 - Actual end-to-end recording: produced after the real-service run.
 

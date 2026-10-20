@@ -16,6 +16,10 @@
 - 该金额不含托管磁盘、公共 IPv4、流量、其它服务及税费，也不证明这个学生订阅有可用区域、规格、配额或库存。创建前必须再核对控制台总配置。
 - Amazon S3 的请求和流量不由 Azure 学生额度支付，需要课程/数据拥有者明确允许的测试数据和只读权限。
 
+本次只读进入该学生订阅的创建向导后，Australia East 的 Ubuntu 24.04 x64 / Standard_B4as_v2 可在大小列表选择，回到基本信息后未显示该规格不可用错误；控制台计算估价 US$138.70/月，与上述 US$0.19/小时一致。这只是配置草稿，不是已通过完整创建验证，也没有创建资源、SSH 密钥或开放网络端口。
+
+草稿中另核对了 64 GiB Standard SSD LRS（E6），未添加数据磁盘。公开价格接口返回该磁盘 US$6.528/月、标准公网 IPv4 US$0.005/小时。仅作 730 小时/月的粗略折算，7 天计算 + 磁盘容量 + 一个公网 IPv4 约 US$34.26；**仍不含磁盘操作、网络出站、其它服务及税费，不是总价或封顶承诺**。Standard SSD 的 I/O 操作另计费，暂停/解除分配 VM 后保留的磁盘和 IP 仍计费。[磁盘计费规则](https://learn.microsoft.com/en-us/azure/virtual-machines/disks-understand-billing)
+
 只读复查计算费，不需要 Azure 登录，不创建任何东西：
 
     python scripts/azure_price_check.py --region australiaeast --sku Standard_B4as_v2 --hours 168

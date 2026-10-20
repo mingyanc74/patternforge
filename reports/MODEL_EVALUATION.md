@@ -43,3 +43,15 @@ The expanded native evaluation passed **10/10** with the final operation-specifi
 Intermediate prompt-only revisions failed 1–3 cases, including accidental whole-cell anchoring. They were not accepted as successful. A complete container run is required for the final code; the local 10/10 result does not itself certify that run or real AWS.
 
 The end-to-end test now describes the actual custom identifier format and keeps its original exact row count, changed-cell count and result-value assertions. It additionally checks that an ambiguous request fails before Spark and saves bounded, generated test-only diagnostics before correctness assertions.
+
+## Verified Linux container integration
+
+The [genuine-model run on 2f5efb9a](https://github.com/mingyanc74/patternforge/actions/runs/39429271689) completed successfully. It used the pinned llama.cpp container, Qwen3 weights and actual Django, PostgreSQL, Celery, Redis and Spark services. **Only S3 was a synthetic protocol fixture; this is not real-AWS authorization evidence or a public deployment.**
+
+- Expanded model semantics: **10/10 passed**, with request/validation times of 10.751–48.741 seconds on this 2-logical-CPU Linux runner. The cold first request was the slowest; native timings are not substituted for container timings.
+- Complete task harness: **284.61 seconds**, with 1,000 rows and 10 columns per operation. Replacement, extraction and normalization each produced the exact expected 1,000 changed cells and preserved the complete row count.
+- Each operation recorded 8 effective partitions and 2 executors, with one core/1 GiB per executor and 1 GiB driver memory. Spark stage times were 24.921, 26.288 and 24.488 seconds respectively, not end-to-end request times.
+- Excel inspection/transformation, real Redis plan-cache reuse, ambiguous-ID refusal before Spark, session isolation and actual running Spark cancellation passed. Cancellation took 1.65 seconds in this run.
+- Machine-readable semantic and end-to-end reports are attached to that workflow as genuine-model-e2e-report.
+
+These are bounded correctness samples, not general semantic accuracy. For example, one generated email extraction rule used a broader character range than intended; the fixed positive sample passed, but this does not certify comprehensive negative-case or RFC email validation. Users must review generated rules and results against their own data. No deterministic rule replacement was used to make the model test pass.

@@ -29,9 +29,11 @@ Local tests cover API validation, encrypted credentials, session/CSRF isolation,
 
 The separate `compose.ci.yml` overlay uses **synthetic S3 and LLM protocol fixtures** solely for reproducible integration tests. PostgreSQL, Celery, Redis, the Spark master and two Spark workers remain real. A green fixture test is not proof of real AWS permissions, real model accuracy, or a public deployment.
 
+On commit 2f5efb9a, [application CI](https://github.com/mingyanc74/patternforge/actions/runs/39429269402) passed 75 Linux backend tests, 5 frontend tests, the production frontend build and distributed integration. A separate [genuine Qwen3 container run](https://github.com/mingyanc74/patternforge/actions/runs/39429271689) passed 10/10 bounded semantic cases and the complete 1,000-row task harness using actual model inference. S3 remained synthetic in both workflows; model accuracy outside the recorded cases is not guaranteed.
+
 The [3-million-row, 10-column distributed benchmark](reports/BENCHMARK.md) passed: each of the three operations used two real executors, and Spark processing took 102.6–107.5 seconds per operation. See [validation evidence](reports/VALIDATION.md) for tested commits and limitations.
 
-**Before final assessment submission:** perform the real-AWS acceptance run, verify the configured genuine model in the complete stack, provide a working public HTTPS URL and embed the real demonstration video. Track these in [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
+**Before final assessment submission:** deploy the complete genuine-model stack on the selected host, perform the real-AWS acceptance run there, provide a working public HTTPS URL and embed the real demonstration video. Track these in [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
 
 ## Quick start: complete stack
 
