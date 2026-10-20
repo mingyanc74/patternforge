@@ -22,6 +22,12 @@ The [3-million-row, 10-column benchmark](BENCHMARK.md) also passed on its record
 
 A separate manual genuine-model workflow is now provided. It uses real Qwen3 inference and synthetic S3, never real AWS. Its existence alone is not a pass result.
 
+Latest [application validation on 177f2aa2](https://github.com/mingyanc74/patternforge/actions/runs/39382943621): Linux backend **64 passed in 54.63s**, including the native-Windows-skipped Parquet test and production HTTPS probe regression; frontend build/tests passed. The distributed-stack job was still running when this entry was written.
+
+The [genuine-model container integration run](https://github.com/mingyanc74/patternforge/actions/runs/39382945058) was also still running. Neither pending job is labelled successful.
+
+The merged production/local-model Compose configuration was checked with Compose v2: secure web overrides and private internal ports passed, and the database/broker environment remained preserved. No cloud containers were started by that configuration check.
+
 ## Not yet established by local tests
 
 - Real AWS authorization and an unconfigured reviewer-owned bucket.

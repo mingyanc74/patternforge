@@ -16,6 +16,13 @@ services:
     image: ghcr.io/ggml-org/llama.cpp@sha256:8ffe0d28ff5261cc2f78ca1f67db1515bc2529b904a3c25f5b24f4cedfc3411d
     command: [-m, /models/Qwen3-4B-Q4_K_M.gguf, --alias, patternforge-local, --host, 0.0.0.0, --port, '8089', --ctx-size, '2048', --threads, '2', --parallel, '1', --no-ui, --no-slots, --temp, '0', --reasoning, 'off', --no-repack]
     volumes: [./data/models:/models:ro]
+    # Override the official image's inherited probe, which otherwise targets port 8080.
+    healthcheck:
+      test: [CMD, curl, --fail, --max-time, '3', http://localhost:8089/health]
+      interval: 5s
+      timeout: 4s
+      start_period: 30s
+      retries: 30
     # No public port, application secrets, mounted input data or AWS credentials.
     restart: unless-stopped
     init: true

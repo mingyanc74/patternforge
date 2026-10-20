@@ -13,7 +13,7 @@
 
 ## 2. 在服务器准备代码与私有配置
 
-使用项目官方安装说明安装 Docker Engine 和 Compose v2、Git、Python 3。只克隆一次私有仓库；如需认证，使用你自己的安全登录方式，不把 Token 写进命令 URL、聊天、README 或镜像。
+使用各工具的官方安装说明安装 Docker Engine 和 Compose v2、Git、Python 3.11 或更新版。模型下载脚本需要 Python 3.11+；不要依赖旧系统的默认 Python 版本。只克隆一次私有仓库；如需认证，使用你自己的安全登录方式，不把 Token 写进命令 URL、聊天、README 或镜像。
 
 在仓库目录运行：
 
