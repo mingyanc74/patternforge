@@ -74,6 +74,22 @@ def test_invalid_credentials_do_not_retry(saved_connection, data_dir, mocker):
     assert job.status == Job.Status.FAILED and job.attempt == 1
 
 
+def test_ambiguous_rule_does_not_start_spark_or_retry(saved_connection, data_dir, mocker):
+    job = queued(saved_connection)
+    mocker.patch("core.tasks.ensure_unchanged")
+    mocker.patch(
+        "core.tasks.get_plan",
+        side_effect=PipelineError("RULE_NEEDS_CLARIFICATION", "Specify the custom identifier format."),
+    )
+    runner = mocker.patch("core.tasks.run_spark")
+    process_job(str(job.id))
+    job.refresh_from_db()
+    assert job.status == Job.Status.FAILED and job.attempt == 1 and not job.manifest
+    assert job.error_code == "RULE_NEEDS_CLARIFICATION"
+    assert not job.plan
+    runner.assert_not_called()
+
+
 def test_cancel_during_work_does_not_publish_result(saved_connection, data_dir, email_plan, mocker):
     job = queued(saved_connection)
     mocker.patch("core.tasks.ensure_unchanged")

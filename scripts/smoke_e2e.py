@@ -97,12 +97,12 @@ def main():
             raise AssertionError(f"{path}: HTTP {response.status_code}: {response.text[:600]}")
         return response.json()
 
-    def wait(job_id):
+    def wait(job_id, expected_status="SUCCESS"):
         deadline = time.monotonic() + 600
         while time.monotonic() < deadline:
             result = request("GET", "/jobs/" + job_id)
             if result["status"] in {"SUCCESS", "FAILED", "CANCELLED"}:
-                assert result["status"] == "SUCCESS", result.get("error")
+                assert result["status"] == expected_status, result.get("error")
                 return result
             time.sleep(1)
         raise AssertionError("Job timed out")
@@ -123,10 +123,35 @@ def main():
     input_config = {"connection_id": connection["id"], "source_key": "inputs/customers.csv"}
     inspection = wait(request("POST", "/files/inspect", input_config, expected=202)["id"])
     assert inspection["metadata"]["preview"][0]["ID"] == "00000000"
+    if args.genuine_model:
+        ambiguous = wait(
+            request(
+                "POST",
+                "/jobs",
+                {
+                    **input_config,
+                    "inspection_id": inspection["id"],
+                    "operation": "regex_extract",
+                    "prompt": "Extract order IDs",
+                    "target_columns": ["Description"],
+                    "new_column": "unspecified_id",
+                },
+                expected=202,
+            )["id"],
+            expected_status="FAILED",
+        )
+        assert ambiguous["error"]["code"] == "RULE_NEEDS_CLARIFICATION"
+        assert not ambiguous["result_available"] and not ambiguous["plan"]
+        assert "patternforge-" + ambiguous["id"] not in cluster()["active_application_names"]
     jobs = []
     for operation, prompt, columns, extra in [
         ("regex_replace", "Find email addresses", ["Email"], {"replacement": "$REDACTED"}),
-        ("regex_extract", "Extract order IDs", ["Description"], {"new_column": "order_id"}),
+        (
+            "regex_extract",
+            "Extract order IDs beginning with ORD- followed by digits",
+            ["Description"],
+            {"new_column": "order_id"},
+        ),
         ("normalize", "Trim, collapse whitespace, lowercase names", ["Name"], {}),
     ]:
         submitted = request(
@@ -144,10 +169,38 @@ def main():
         )
         finished = wait(submitted["id"])
         page = request("GET", "/jobs/" + finished["id"] + "/results", params={"limit": 25})
+        # Test-only, generated public samples: retain evidence even if a correctness check fails.
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        diagnostic = {
+            "status": "incomplete",
+            "fixture_notice": "Synthetic S3 and generated sample rows; genuine model"
+            if args.genuine_model
+            else "Synthetic S3 and deterministic model",
+            "completed_operations": jobs,
+            "current_operation": operation,
+            "generated_plan": finished["plan"],
+            "metadata": finished["metadata"],
+            "expected_rows_and_changed_cells": args.rows,
+            "first_sample_rows": page["rows"][:3],
+        }
+        args.report.write_text(json.dumps(diagnostic, indent=2), encoding="utf-8")
+        print(
+            json.dumps(
+                {
+                    "operation": operation,
+                    "plan": finished["plan"],
+                    "rows": page["total_rows"],
+                    "changed_cells": finished["metadata"]["changed_cells"],
+                }
+            ),
+            flush=True,
+        )
         assert page["total_rows"] == args.rows and len(page["rows"]) == min(25, args.rows)
         assert finished["metadata"]["partitions"] >= 2
         assert finished["metadata"]["executor_count"] >= 2, "The job must actually use two remote executors."
-        assert sum(finished["metadata"]["changed_cells"].values()) == args.rows
+        assert sum(finished["metadata"]["changed_cells"].values()) == args.rows, (
+            operation + ": changed-cell count mismatch; inspect the retained test-only report."
+        )
         assert finished["metadata"]["cache_hit"] is False
         for row in page["rows"]:
             assert row["City"] == "Sydney" and row["Status"] == "active"
@@ -260,6 +313,9 @@ def main():
         "jobs": jobs,
         "excel": "inspect-and-transform-passed",
         "real_redis_plan_cache": "passed",
+        "ambiguous_identifier_request": "refused-before-spark"
+        if args.genuine_model
+        else "not-a-fixture-check",
         "running_cancellation": "spark-application-stopped",
         "cancellation_seconds": round(time.monotonic() - cancel_started, 2),
         "isolation": "passed",

@@ -21,6 +21,10 @@ A private, natural-language workspace for transforming CSV and Excel data from *
 
 The repository contains real provider integrations. It does not invent model output when a model key is missing.
 
+Current free-only cloud choice: **Azure for Students**, without a payment method or paid upgrade. The student account is activated, but no VM/public deployment has been created. See [Azure capacity, credit and review-window plan](docs/AZURE_STUDENT_zh.md). Student credit is finite, not a permanently free server.
+
+Custom identifiers need their format in the instruction (for example, a prefix plus digits), because private data rows are never sent to the model. Refused plans stop before Spark and are not cached. The provider uses operation-specific instructions and public few-shot examples; actual uncached requests still invoke the genuine model, never a built-in prompt-to-regex fallback.
+
 Local tests cover API validation, encrypted credentials, session/CSRF isolation, cache behavior, retries, cancellation state, outbox recovery, pagination and real Java/Spark expressions. CSV and Excel inspection are also exercised through the actual isolated Spark driver. Native Windows Parquet output requires Hadoop native binaries; the complete output path is tested in Linux CI/Docker instead of pretending the Windows installation includes them.
 
 The separate `compose.ci.yml` overlay uses **synthetic S3 and LLM protocol fixtures** solely for reproducible integration tests. PostgreSQL, Celery, Redis, the Spark master and two Spark workers remain real. A green fixture test is not proof of real AWS permissions, real model accuracy, or a public deployment.

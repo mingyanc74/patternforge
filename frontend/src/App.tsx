@@ -366,7 +366,14 @@ export default function App() {
     setColumns([]);
   }
   function chooseFile(file: SourceFile) {
-    if (job) { setJob(null); setPage(null); setPrompt(""); setReplacement(""); setNewColumn(""); setReusedFrom(""); }
+    if (job) {
+      setJob(null);
+      setPage(null);
+      setPrompt("");
+      setReplacement("");
+      setNewColumn("");
+      setReusedFrom("");
+    }
     setSelected(file);
     resetInspection();
     setSheet("");
@@ -1494,6 +1501,13 @@ export default function App() {
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
                     />
+                    {operation === "regex_extract" && (
+                      <small>
+                        For custom IDs, specify the prefix and format, e.g. ORD-
+                        followed by one or more digits. Data rows are not sent
+                        to the model.
+                      </small>
+                    )}
                   </div>
                   {operation === "regex_replace" ? (
                     <div className="field">

@@ -61,30 +61,65 @@ def main():
             "Find email addresses",
             "Contact a.b+tag@example.technology today",
             "a.b+tag@example.technology",
+            ["Text"],
         ),
-        ("regex_replace", "识别文本中的电子邮箱地址", "用户 hello@example.com", "hello@example.com"),
-        ("regex_replace", "Match runs of decimal digits", "Order AB123X", "123"),
+        (
+            "regex_replace",
+            "识别文本中的电子邮箱地址",
+            "用户 hello@example.com",
+            "hello@example.com",
+            ["Text"],
+        ),
+        ("regex_replace", "Match runs of decimal digits", "Order AB123X", "123", ["Text"]),
         (
             "regex_extract",
             "Extract the email address from the text",
             "Write to team@example.org now",
             "team@example.org",
+            ["Text"],
         ),
         (
             "normalize",
             "Trim ends, collapse repeated whitespace and convert to lowercase",
             "  ALICE   SMITH  ",
             "alice smith",
+            ["Text"],
         ),
-        ("normalize", "Make all letters uppercase and trim surrounding whitespace", "  Alice  ", "ALICE"),
+        (
+            "normalize",
+            "Make all letters uppercase and trim surrounding whitespace",
+            "  Alice  ",
+            "ALICE",
+            ["Text"],
+        ),
+        # A custom identifier has no universal format; do not infer it from a private cell.
+        ("regex_extract", "Extract order IDs", "Order ORD-0 shipped", None, ["Description"]),
+        (
+            "regex_extract",
+            "Extract order IDs beginning with ORD- followed by digits",
+            "Order ORD-0 shipped",
+            "ORD-0",
+            ["Description"],
+        ),
+        (
+            "regex_extract",
+            "提取以 INV- 开头、后面紧跟一位或多位数字的发票编号",
+            "Invoice INV-42 sent",
+            "INV-42",
+            ["Description"],
+        ),
+        ("normalize", "Trim, collapse whitespace, lowercase names", "  USER   0  ", "user 0", ["Name"]),
     ]
     results = []
-    for operation, prompt, sample, expected in cases:
+    for operation, prompt, sample, expected, columns in cases:
         start = time.monotonic()
         entry = {"operation": operation, "instruction": prompt}
+        expects_refusal = expected is None
+        if expects_refusal:
+            entry["expected_error"] = "RULE_NEEDS_CLARIFICATION"
         try:
             plan = validate_plan(
-                request_plan({"operation": operation, "prompt": prompt, "target_columns": ["Text"]}),
+                request_plan({"operation": operation, "prompt": prompt, "target_columns": columns}),
                 operation,
             )
             validate_java_pattern(plan)
@@ -100,9 +135,29 @@ def main():
             else:
                 match = regex.search(plan["pattern"], sample, timeout=0.05)
                 actual = match.group(plan["group"]) if match else None
-            entry.update(passed=actual == expected, plan=plan, expected=expected, actual=actual)
+            entry.update(
+                passed=not expects_refusal and actual == expected, plan=plan, expected=expected, actual=actual
+            )
+            if expected == "ORD-0":
+                # Reuse this one genuine plan across distinct lengths and counterexamples.
+                checks = []
+                for text, wanted in [
+                    ("Order ORD-9 shipped", "ORD-9"),
+                    ("Order ORD-123456 shipped", "ORD-123456"),
+                    ("Order PO-123 shipped", None),
+                    ("No order here", None),
+                ]:
+                    match = regex.search(plan["pattern"], text, timeout=0.05)
+                    result = match.group(plan["group"]) if match else None
+                    checks.append(
+                        {"sample": text, "expected": wanted, "actual": result, "passed": result == wanted}
+                    )
+                entry["additional_checks"] = checks
+                entry["passed"] = entry["passed"] and all(check["passed"] for check in checks)
         except PipelineError as exc:
-            entry.update(passed=False, error_code=exc.code)
+            entry.update(
+                passed=expects_refusal and exc.code == "RULE_NEEDS_CLARIFICATION", error_code=exc.code
+            )
         entry["seconds"] = round(time.monotonic() - start, 3)
         results.append(entry)
         print(json.dumps(entry, ensure_ascii=False), flush=True)

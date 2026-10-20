@@ -31,3 +31,15 @@ On this memory-constrained computer, default runtime repacking initially failed 
 This native evaluation did not exercise Amazon S3, the public URL, ARM64, the model container or the complete task stack. Those are separate acceptance steps. The manual free-model CI workflow exercises the container model with real application services and explicitly synthetic S3; inspect its actual result before asserting success.
 
 Run on a genuine configured model with scripts/evaluate_model.py; use --local for the loopback native model. JSON output is saved under ignored reports/local, never populated with user datasets.
+
+## Subsequent format-clarification regression
+
+The initial container workflow passed its original six semantic samples but failed the complete synthetic-S3 pipeline at extraction's exact changed-cell count. Reproducing the instruction "Extract order IDs" with the real model generated a guessed label-based rule which did not match the generated ORD-number data. A column name is not a sufficient definition of a custom identifier, and private cells are deliberately not sent to the model.
+
+The fix uses operation-specific instructions and public few-shot guidance, including a supported text-search example and an unspecified-format refusal. Those examples are inputs to actual inference, not a fallback or a lookup table. Cache version changed; null refused rules are not cached, do not start Spark, and return RULE_NEEDS_CLARIFICATION without pointless retries. The extraction UI explains the required prefix/format.
+
+The expanded native evaluation passed **10/10** with the final operation-specific prompt, including the original six samples, an ambiguous custom-ID refusal, an explicit ORD-number rule, a Chinese INV-number rule and the exact pipeline normalization phrasing. The ORD plan was also checked against different lengths and nonmatching examples. Requests plus validation took about 6–15 seconds in this run; not a performance guarantee.
+
+Intermediate prompt-only revisions failed 1–3 cases, including accidental whole-cell anchoring. They were not accepted as successful. A complete container run is required for the final code; the local 10/10 result does not itself certify that run or real AWS.
+
+The end-to-end test now describes the actual custom identifier format and keeps its original exact row count, changed-cell count and result-value assertions. It additionally checks that an ambiguous request fails before Spark and saves bounded, generated test-only diagnostics before correctness assertions.

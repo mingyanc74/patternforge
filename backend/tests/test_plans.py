@@ -47,8 +47,8 @@ def test_model_request_keeps_data_and_credentials_private(email_plan, mocker, se
     }
     assert request_plan(config) == email_plan
     payload = http_client.post.call_args.kwargs["json"]
-    assert "识别文本中的电子邮箱地址" in payload["messages"][1]["content"]
-    assert "\\u8bc6" not in payload["messages"][1]["content"]
+    assert "识别文本中的电子邮箱地址" in payload["messages"][-1]["content"]
+    assert "\\u8bc6" not in payload["messages"][-1]["content"]
     messages = json.dumps(payload["messages"])
     assert (
         "private-replacement" not in messages
@@ -92,6 +92,19 @@ def test_llm_cannot_change_operation(email_plan):
         validate_plan(email_plan, "normalize")
 
 
+def test_unspecified_or_refused_regex_requires_clarification(email_plan):
+    with pytest.raises(PipelineError) as error:
+        validate_plan(
+            {**email_plan, "pattern": None, "explanation": "Specify the identifier format."}, "regex_replace"
+        )
+    assert error.value.code == "RULE_NEEDS_CLARIFICATION"
+    assert "prefix" in error.value.message
+    # The old cache version must not reuse rules generated under the guessing policy.
+    from core.services.plans import VERSION
+
+    assert VERSION == "plan-v1-safe-subset-3"
+
+
 def test_java_real_engine_validation(email_plan):
     validate_java_pattern(email_plan)
     with pytest.raises(PipelineError):
@@ -126,3 +139,22 @@ def test_missing_llm_configuration_never_falls_back_to_sample(settings):
     settings.LLM_API_KEY = ""
     with pytest.raises(PipelineError, match="LLM_NOT_CONFIGURED"):
         request_plan({"operation": "regex_replace", "prompt": "email", "target_columns": ["email"]})
+
+
+def test_refused_plan_is_never_cached_or_java_executed(saved_connection, email_plan, mocker):
+    fake = fakeredis.FakeRedis(decode_responses=True)
+    lock = MagicMock()
+    lock.acquire.return_value = True
+    mocker.patch.object(fake, "lock", return_value=lock)
+    mocker.patch("core.services.plans.cache_client", return_value=fake)
+    mocker.patch("core.services.plans.request_plan", return_value={**email_plan, "pattern": None})
+    java = mocker.patch("core.services.plans.validate_java_pattern")
+    job = Job(
+        owner=saved_connection.owner,
+        config={"operation": "regex_replace", "prompt": "Find custom IDs", "target_columns": ["Email"]},
+    )
+    with pytest.raises(PipelineError, match="RULE_NEEDS_CLARIFICATION"):
+        get_plan(job)
+    java.assert_not_called()
+    assert not fake.keys("plan:*")
+    lock.release.assert_called_once()

@@ -1,6 +1,8 @@
-# 零预算、独立云主机方案
+# 免绑卡、零现金支出的独立云方案
 
 已选定：完整应用在独立云服务器运行，不使用电脑托管、临时隧道、静态前端或 GitHub Actions 长驻进程替代服务器。不会代开付费套餐，也不保证免费主机一定有库存。
+
+当前选择 Azure for Students：用户已激活 US$100 学生额度，不需要输入支付方式。详见 [Azure 部署与额度规划](AZURE_STUDENT_zh.md)。这里的零现金支出指不绑卡、不升级、只用学生额度，不代表虚拟机没有计量费用或可以无限期运行。服务器仍未创建。
 
 ## 模型不需要付费 API
 
@@ -10,15 +12,15 @@
 
 2026-10-20 的 Windows 原生 CPU 实测：中英文邮箱、数字匹配、邮箱提取及两种文本标准化共 6/6 通过，单次约 12–29 秒；这不是完整集群、ARM 性能或真实 AWS 验收。详见 [验证记录](../reports/VALIDATION.md)。
 
-## 独立云主机候选与限制
+## 已排除的原候选与限制
 
 截至 2026-10-20 核实的 [Oracle Always Free 官方说明](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)，A1 ARM 的月度免费额度合计相当于 2 OCPU、12 GB 内存，另有总计 200 GB 的免费块存储。不要沿用旧的 4 OCPU/24 GB 数字；以自己账号、主区域和创建页面的 Always Free 标识为准。
 
-建议单台 2 OCPU/12 GB A1、Ubuntu、50 GB 启动盘作为待实测目标。完整服务包括 Django、PostgreSQL、Redis、Celery、Spark Master、两个 Worker、模型和 HTTPS 网关；2 个 Spark Worker 是分布式进程，不是两台物理主机。免费主机的性能、容量和持续可用性不保证，闲置实例可能被回收。不要为抢容量升级付费套餐。
+Oracle 原候选需要银行卡验证，不符合用户明确的免绑卡要求，因此不再引导注册或使用它。完整服务包括 Django、PostgreSQL、Redis、Celery、Spark Master、两个 Worker、模型和 HTTPS 网关；2 个 Spark Worker 是分布式进程，不是两台物理主机。
 
 Java 镜像路径已改为识别 amd64/arm64；所固定 llama.cpp 镜像包含这两种架构。但尚未获得 ARM 云主机进行整套运行，不能宣称 ARM 已验收。
 
-你需要本人完成 [云账号注册](https://signup.oraclecloud.com/) 与身份/银行卡验证，并确认没有升级付费。不要在聊天发送密码、卡号、SSH 私钥或 Token。若注册不通过或免费容量不足，先停止：当前无法承诺另有等价免费独立主机。
+不要在聊天发送密码、卡号、SSH 私钥或 Token。Azure 学生计划仍可能限制区域、配额和规格；如果没有可用资源，先停止并核实，不改为绑卡或按量付费。
 
 [Hugging Face 官方说明](https://huggingface.co/docs/hub/spaces-overview)显示，新建 Docker/Gradio 计算 Space 需要付费计划，不能把其 CPU 小时价为零等同于零预算开户。
 

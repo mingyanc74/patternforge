@@ -40,3 +40,12 @@ The merged production/local-model Compose configuration was checked with Compose
 The CI S3/model fixtures are intentionally synthetic. They validate protocol integration and task processing, not external service authorization or model quality.
 
 The selected deployment is independent cloud hosting with free resources only. No laptop tunnel was launched. A cloud account, available free capacity and DNS hostname are still needed before a public URL can be claimed.
+
+## Current un-deployed revision
+
+- Expanded native genuine-model evaluation: 10/10, including ambiguity refusal, explicit custom formats in English/Chinese and additional positive/negative checks.
+- Complete Windows backend regression: 74 passed, 1 skipped in 36.80s; the documented native Parquet dependency is the skip. Frontend build and 5 tests passed.
+- Refused rules do not enter the verified-plan cache or execute Spark; task regression covers a non-retryable failure with no result.
+- The previously pending model container run 39383504796 later completed with a failed extraction changed-cell assertion. It was not a successful end-to-end run; see MODEL_EVALUATION.md for reproduction and the fix.
+- Azure for Students is now activated; no VM or public deployment was created. Read-only price lookup and quote filtering tests passed. Planning uses finite student credits without a payment method, not perpetual free hosting.
+- New complete-stack CI is required for the changed revision. Do not infer a pass from local tests or older green runs.
