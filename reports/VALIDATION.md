@@ -22,9 +22,11 @@ The [3-million-row, 10-column benchmark](BENCHMARK.md) also passed on its record
 
 A separate manual genuine-model workflow is now provided. It uses real Qwen3 inference and synthetic S3, never real AWS. Its existence alone is not a pass result.
 
-Latest [application validation on 177f2aa2](https://github.com/mingyanc74/patternforge/actions/runs/39382943621): Linux backend **64 passed in 54.63s**, including the native-Windows-skipped Parquet test and production HTTPS probe regression; frontend build/tests passed. The distributed-stack job was still running when this entry was written.
+Latest [application validation on 177f2aa2](https://github.com/mingyanc74/patternforge/actions/runs/39382943621) **completed successfully**: Linux backend **64 passed in 54.63s**, including the native-Windows-skipped Parquet test and production HTTPS probe regression; frontend build/tests and distributed-stack integration also passed.
 
-The [genuine-model container integration run](https://github.com/mingyanc74/patternforge/actions/runs/39382945058) was also still running. Neither pending job is labelled successful.
+The [first genuine-model container integration](https://github.com/mingyanc74/patternforge/actions/runs/39382945058) failed at container readiness: the official image inherited a health probe for port 8080 while this service listens on 8089. Its logs confirmed successful model loading, not a passed semantic or task test. The probe was explicitly corrected to 8089 and the merged configuration rechecked.
+
+The [corrected genuine-model integration run on 55f7f3f7](https://github.com/mingyanc74/patternforge/actions/runs/39383504796) was running when this entry was written. It is not labelled successful; model-container/Spark integration remains pending its actual outcome.
 
 The merged production/local-model Compose configuration was checked with Compose v2: secure web overrides and private internal ports passed, and the database/broker environment remained preserved. No cloud containers were started by that configuration check.
 
