@@ -15,6 +15,7 @@ def main():
     parser.add_argument("--repo", default="patternforge")
     parser.add_argument("--run-id", type=int)
     parser.add_argument("--log-job", type=int)
+    parser.add_argument("--cancel-run", type=int, help="Cancel a superseded repository CI run")
     parser.add_argument("--dispatch-benchmark", type=int)
     parser.add_argument("--dispatch-model-check", action="store_true")
     args = parser.parse_args()
@@ -46,7 +47,10 @@ def main():
         except urllib.error.HTTPError as exc:
             raise SystemExit(f"GitHub API returned HTTP {exc.code}; credentials were not printed.") from None
 
-    if args.dispatch_model_check:
+    if args.cancel_run:
+        api(f"/actions/runs/{args.cancel_run}/cancel", {})
+        print("Requested cancellation of the superseded repository test run.")
+    elif args.dispatch_model_check:
         api("/actions/workflows/free-model-check.yml/dispatches", {"ref": "main"})
         print("Dispatched genuine free CPU model integration check.")
     elif args.dispatch_benchmark:
