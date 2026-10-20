@@ -4,7 +4,7 @@ A private, natural-language workspace for transforming CSV and Excel data from *
 
 **React · Django REST Framework · Celery · Redis · PostgreSQL · PySpark**
 
-[中文启动说明](docs/START_HERE_zh.md) · [Architecture](docs/ARCHITECTURE.md) · [Submission checklist](docs/SUBMISSION.md) · [API contract](docs/API.md) · [Security](docs/SECURITY.md)
+[中文启动说明](docs/START_HERE_zh.md) · [零订阅费用方案](docs/FREE_ONLY_zh.md) · [Architecture](docs/ARCHITECTURE.md) · [Submission checklist](docs/SUBMISSION.md) · [API contract](docs/API.md) · [Security](docs/SECURITY.md)
 
 ## What it does
 
@@ -25,11 +25,13 @@ Local tests cover API validation, encrypted credentials, session/CSRF isolation,
 
 The separate `compose.ci.yml` overlay uses **synthetic S3 and LLM protocol fixtures** solely for reproducible integration tests. PostgreSQL, Celery, Redis, the Spark master and two Spark workers remain real. A green fixture test is not proof of real AWS permissions, real model accuracy, or a public deployment.
 
-**Before final assessment submission:** configure a real LLM, perform the real-AWS acceptance run, provide a working public HTTPS URL, run and attach the large-data benchmark, and embed the real demonstration video. Track these in [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
+The [3-million-row, 10-column distributed benchmark](reports/BENCHMARK.md) passed: each of the three operations used two real executors, and Spark processing took 102.6–107.5 seconds per operation. See [validation evidence](reports/VALIDATION.md) for tested commits and limitations.
+
+**Before final assessment submission:** perform the real-AWS acceptance run, verify the configured genuine model in the complete stack, provide a working public HTTPS URL and embed the real demonstration video. Track these in [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
 
 ## Quick start: complete stack
 
-Prerequisites: Docker with Compose v2, an x86-64 Linux container runtime, and adequate available memory. For development, allocate at least 8 GB to Docker; use a larger instance for the multi-million-row benchmark. Docker Desktop on Windows must be running before Compose is invoked.
+Prerequisites: Docker with Compose v2 and a Linux container runtime. The complete stack is verified on x86-64 Linux; Java paths and the optional CPU-model image support ARM64, but full ARM runtime acceptance is still pending. Allocate at least 8 GB for development, or a 12 GB-class host for the full CPU-model deployment; measure actual capacity on the chosen host. Docker Desktop on Windows must be running before Compose is invoked.
 
 ```bash
 python scripts/bootstrap.py
@@ -44,6 +46,15 @@ LLM_MODEL=a-structured-output-capable-model-you-can-access
 ```
 
 Use a provider/model supporting the Chat Completions JSON-schema protocol. An explicitly configured compatible provider with JSON-object mode can set `LLM_JSON_SCHEMA=0`; server-side validation still applies. No automatic fallback to weaker modes occurs.
+
+For **no model-service subscription**, download the official checksum-pinned CPU weights and use the optional local-model overlay instead. It performs genuine model inference, not the deterministic CI fixture:
+
+```bash
+python scripts/free_model.py --download-only
+docker compose -f docker-compose.yml -f compose.local-model.yml up --build
+```
+
+The model stays on the internal container network. See [free-only instructions and public-hosting limitations](docs/FREE_ONLY_zh.md). Otherwise, use the regular command below with your configured provider.
 
 ```bash
 docker compose up --build
@@ -180,7 +191,7 @@ For a large test, manually run the **Verify application** workflow with `benchma
 python scripts/smoke_e2e.py --rows 3000000 --report reports/local/three-million-rows.json
 ```
 
-This exercises actual S3-protocol input and three distributed transformations with deterministic provider fixtures. Its generated dataset currently has four columns; use the ten-column generator for the separately specified assessment baseline. Record environment resources, rows, actual bytes, partitions, timings, correctness and limitations. Do not label fixture timing as a real-AWS/real-LLM measurement.
+This generates ten columns and exercises actual S3-protocol input and three distributed transformations with deterministic provider fixtures. It asserts two active executors, exact row/changed-cell counts, result pagination, Excel transformation, cache reuse and actual running Spark cancellation. Record environment resources, rows, actual bytes, partitions, timings, correctness and limitations. Do not label fixture timing as a real-AWS/real-LLM measurement.
 
 Generate ten-column files for the real acceptance run:
 
@@ -192,6 +203,16 @@ python scripts/generate_dataset.py --rows 100 --output data/fixtures/customers.x
 Upload only to a bucket you intentionally choose, then process it through the normal UI. The generator does not upload automatically or require access to any existing private file.
 
 ## Production deployment
+
+Selected delivery mode: **independent cloud host, free resources only**. No laptop tunnel or static-only deployment is substituted. Follow the [independent-cloud checklist](docs/CLOUD_DEPLOY_zh.md), including the read-only preflight and real-service acceptance. A cloud account and available free capacity are still required; none is provisioned by this repository.
+
+For the internal free CPU model on that host, set the real DNS hostname in the private environment file, then run:
+
+    python3 scripts/free_model.py --download-only
+    python3 scripts/cloud_preflight.py
+    docker compose -f docker-compose.yml -f compose.local-model.yml -f compose.production.yml up -d --build --wait --wait-timeout 600
+
+The default Caddy configuration requires a DNS hostname for trusted HTTPS, not a bare IP. The following alternative is for an externally configured genuine model:
 
 Use a Docker-capable Linux host with sufficient memory, a hostname pointed to it, and inbound ports 80/443. Set `DOMAIN` in the server's private `.env`, configure a real model, and run:
 

@@ -21,6 +21,9 @@ def main():
     parser.add_argument("--s3-url", default="http://localhost:5000")
     parser.add_argument("--cluster-url", default="http://localhost:8009/cluster")
     parser.add_argument("--rows", type=int, default=1000)
+    parser.add_argument(
+        "--genuine-model", action="store_true", help="Label a run using the real CPU model overlay"
+    )
     parser.add_argument("--report", type=Path, default=Path("reports/local/e2e.json"))
     args = parser.parse_args()
     if args.rows < 1:
@@ -236,7 +239,11 @@ def main():
         raise AssertionError("Cancellation did not stop the actual Spark application within 60 seconds.")
     report = {
         "status": "passed",
-        "fixture_notice": "S3 and LLM are deterministic test fixtures; Celery, Redis, PostgreSQL and Spark are real.",
+        "fixture_notice": (
+            "S3 is a test fixture; LLM uses genuine local CPU inference; Celery, Redis, PostgreSQL and Spark are real."
+            if args.genuine_model
+            else "S3 and LLM are deterministic test fixtures; Celery, Redis, PostgreSQL and Spark are real."
+        ),
         "rows_per_operation": args.rows,
         "columns": 10,
         "source_bytes": s3.head_object(Bucket=bucket, Key="inputs/customers.csv")["ContentLength"],

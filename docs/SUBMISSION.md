@@ -37,8 +37,8 @@ The initial backlog's 3-million-row, 10-minute and 2-second response targets are
 ## Pending external resources
 
 - Real AWS credentials and a test bucket: supplied privately in the application when available.
-- Real LLM key/model: supplied privately through server `.env` when available.
-- Docker-capable public host and hostname: not provisioned automatically; no paid account is created by these scripts.
+- Genuine model: free Qwen3 CPU model passed 6/6 small local semantic checks; complete-stack verification is separate. An external API key is optional, not required by the free-model overlay.
+- Independent Docker-capable public host and DNS hostname: not yet provisioned. Free-only account registration and available capacity need user action; see CLOUD_DEPLOY_zh.md. Laptop tunnels are not the selected delivery mode.
 - Actual end-to-end recording: produced after the real-service run.
 
 Source, tests and reproducible fixture integration are useful evidence; they do not erase these remaining assessment requirements.

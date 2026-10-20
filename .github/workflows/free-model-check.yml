@@ -1,0 +1,39 @@
+name: Verify genuine free CPU model
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  free-model-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install boto3 requests openpyxl
+      - run: python scripts/bootstrap.py
+      - run: python scripts/free_model.py --download-only
+      - run: docker compose -f docker-compose.yml -f compose.ci.yml -f compose.local-model.yml up -d --build --wait --wait-timeout 300
+      - name: Evaluate genuine model semantics
+        run: |
+          docker compose -f docker-compose.yml -f compose.ci.yml -f compose.local-model.yml exec -T worker python - --wait-ready 120 --report /data/model-evaluation.json < scripts/evaluate_model.py
+      - name: Retrieve genuine semantic evaluation
+        if: always()
+        run: |
+          mkdir -p reports/local
+          docker compose -f docker-compose.yml -f compose.ci.yml -f compose.local-model.yml cp worker:/data/model-evaluation.json reports/local/model-evaluation.json
+      - run: python scripts/smoke_e2e.py --rows 1000 --genuine-model
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: genuine-model-e2e-report
+          path: |
+            reports/local/e2e.json
+            reports/local/model-evaluation.json
+      - name: Diagnose failing containers
+        if: failure()
+        run: docker compose -f docker-compose.yml -f compose.ci.yml -f compose.local-model.yml logs --tail=80 worker local-model
+      - name: Stop test environment
+        if: always()
+        run: docker compose -f docker-compose.yml -f compose.ci.yml -f compose.local-model.yml down

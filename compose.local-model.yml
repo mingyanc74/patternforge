@@ -1,0 +1,21 @@
+# Optional real, no-subscription CPU inference. Download weights with scripts/free_model.py first.
+x-local-model: &local-model
+  LLM_BASE_URL: http://local-model:8089/v1
+  LLM_MODEL: patternforge-local
+  LLM_API_KEY: local-network-placeholder-not-a-provider-key
+  LLM_JSON_SCHEMA: '1'
+services:
+  web:
+    environment: *local-model
+  worker:
+    environment: *local-model
+  dispatcher:
+    environment: *local-model
+  local-model:
+    # Official llama.cpp server-b11669 manifest, verified 2026-10-19. No GPU required.
+    image: ghcr.io/ggml-org/llama.cpp@sha256:8ffe0d28ff5261cc2f78ca1f67db1515bc2529b904a3c25f5b24f4cedfc3411d
+    command: [-m, /models/Qwen3-4B-Q4_K_M.gguf, --alias, patternforge-local, --host, 0.0.0.0, --port, '8089', --ctx-size, '2048', --threads, '2', --parallel, '1', --no-ui, --no-slots, --temp, '0', --reasoning, 'off', --no-repack]
+    volumes: [./data/models:/models:ro]
+    # No public port, application secrets, mounted input data or AWS credentials.
+    restart: unless-stopped
+    init: true

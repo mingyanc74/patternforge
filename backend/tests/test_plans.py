@@ -8,6 +8,62 @@ from core.models import Job
 from core.services.plans import get_plan, validate_java_pattern, validate_plan
 
 
+def test_model_generation_schema_is_operation_specific():
+    from core.services.plans import PLAN_SCHEMA, schema_for_operation
+
+    replace = schema_for_operation("regex_replace")["properties"]
+    assert replace["operation"]["enum"] == ["regex_replace"]
+    assert replace["group"]["enum"] == [0]
+    assert replace["steps"]["maxItems"] == 0
+    normalize = schema_for_operation("normalize")["properties"]
+    assert normalize["pattern"] == {"type": "null"}
+    assert normalize["group"]["enum"] == [0]
+    assert PLAN_SCHEMA["properties"]["operation"]["enum"] == ["regex_replace", "regex_extract", "normalize"]
+
+
+@pytest.mark.parametrize("schema_mode", [True, False])
+def test_model_request_keeps_data_and_credentials_private(email_plan, mocker, settings, schema_mode):
+    import json
+
+    from core.services.plans import request_plan
+
+    settings.LLM_API_KEY = "test-only-key"
+    settings.LLM_MODEL = "test-only-model"
+    settings.LLM_JSON_SCHEMA = schema_mode
+    http_client = mocker.patch("core.services.plans.httpx.Client").return_value.__enter__.return_value
+    response = http_client.post.return_value
+    response.status_code = 200
+    response.is_success = True
+    response.json.return_value = {
+        "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(email_plan)}}]
+    }
+    config = {
+        "operation": "regex_replace",
+        "prompt": "识别文本中的电子邮箱地址",
+        "target_columns": ["Email"],
+        "replacement": "private-replacement",
+        "preview": ["private-cell"],
+        "secret_key": "private-aws",
+    }
+    assert request_plan(config) == email_plan
+    payload = http_client.post.call_args.kwargs["json"]
+    assert "识别文本中的电子邮箱地址" in payload["messages"][1]["content"]
+    assert "\\u8bc6" not in payload["messages"][1]["content"]
+    messages = json.dumps(payload["messages"])
+    assert (
+        "private-replacement" not in messages
+        and "private-cell" not in messages
+        and "private-aws" not in messages
+    )
+    assert payload["store"] is False
+    if schema_mode:
+        assert payload["response_format"]["json_schema"]["schema"]["properties"]["operation"]["enum"] == [
+            "regex_replace"
+        ]
+    else:
+        assert "Required JSON schema:" in payload["messages"][0]["content"]
+
+
 @pytest.mark.parametrize("pattern", ["(", "a*", "(a+)+$", "(a|aa)+$", r"(a)\1", "(?=a)", ".*x"])
 def test_rejects_invalid_empty_or_dangerous_regex(email_plan, pattern):
     plan = {**email_plan, "pattern": pattern}

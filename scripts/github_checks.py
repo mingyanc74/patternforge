@@ -16,6 +16,7 @@ def main():
     parser.add_argument("--run-id", type=int)
     parser.add_argument("--log-job", type=int)
     parser.add_argument("--dispatch-benchmark", type=int)
+    parser.add_argument("--dispatch-model-check", action="store_true")
     args = parser.parse_args()
     credential = subprocess.run(
         ["git", "credential", "fill"],
@@ -45,7 +46,10 @@ def main():
         except urllib.error.HTTPError as exc:
             raise SystemExit(f"GitHub API returned HTTP {exc.code}; credentials were not printed.") from None
 
-    if args.dispatch_benchmark:
+    if args.dispatch_model_check:
+        api("/actions/workflows/free-model-check.yml/dispatches", {"ref": "main"})
+        print("Dispatched genuine free CPU model integration check.")
+    elif args.dispatch_benchmark:
         api(
             "/actions/workflows/ci.yml/dispatches",
             {"ref": "main", "inputs": {"benchmark_rows": str(args.dispatch_benchmark)}},

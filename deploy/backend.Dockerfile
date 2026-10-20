@@ -1,9 +1,11 @@
 FROM python:3.11-slim-bookworm AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
-    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 \
+    JAVA_HOME=/opt/java \
     SPARK_HOME=/usr/local/lib/python3.11/site-packages/pyspark \
     PYSPARK_PYTHON=/usr/local/bin/python PYSPARK_DRIVER_PYTHON=/usr/local/bin/python
 RUN apt-get update && apt-get install -y --no-install-recommends openjdk-17-jdk-headless curl procps \
+    && ln -s /usr/lib/jvm/java-17-openjdk-$(dpkg --print-architecture) /opt/java \
+    && test -x /opt/java/bin/java \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY backend/requirements*.txt ./
