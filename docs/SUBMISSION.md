@@ -2,6 +2,8 @@
 
 This file distinguishes implemented source from externally verified deliverables. It is intentionally not a claim that all external resources already exist.
 
+**2026-10-21 update:** the public password-gated deployment passed 88 genuine-AWS assertions across two private buckets, both file formats, three operations, cache, pagination, running cancellation and controlled retry. [Actual evidence and boundaries](../reports/REAL_AWS_ACCEPTANCE.md). Expiry was accelerated for one connection, not a full-duration observation; first retry failure was isolated fault injection. Demo video, reviewer access and a genuine-AWS million-row measurement are not claimed complete.
+
 | Requirement | Evidence to attach |
 |---|---|
 | GitHub source | Repository URL and commit, access granted to reviewers |
@@ -34,11 +36,13 @@ Record dataset generator command, row/column count, actual bytes, region/network
 
 The initial backlog's 3-million-row, 10-minute and 2-second response targets are project-defined acceptance targets, not numerical promises from the original PDF. If resources differ, report the environment and actual measurements; do not replace missing measurements with estimates.
 
-## Pending external resources
+## External deliverable status
 
-- Real AWS credentials and a test bucket: supplied privately in the application when available.
+- Real AWS credentials and two private buckets: now created with user approval and verified through the application; read-only credentials supplied privately, never committed. [Real AWS report](../reports/REAL_AWS_ACCEPTANCE.md).
 - Genuine model: free Qwen3 CPU model passed the expanded 10/10 semantic checks both natively and in the [complete container verification](https://github.com/mingyanc74/patternforge/actions/runs/39429271689). That run passed the full task pipeline with synthetic S3, not real AWS or a public deployment. An external API key is optional, not required by the free-model overlay.
-- Independent Docker-capable public host and DNS hostname: complete stack is running on the user-approved Azure student-credit VM. [External HTTPS/session, genuine-model and synthetic Spark checks passed](AZURE_ACCEPTANCE_zh.md). This is independent hosting, not a laptop tunnel. Student credits remain finite; real AWS job acceptance is not covered by these checks.
-- Actual end-to-end recording: produced after the real-service run.
+- Independent Docker-capable public host and DNS hostname: complete stack is running on the user-approved Azure student-credit VM. [Azure checks](AZURE_ACCEPTANCE_zh.md) are supplemented by the separate real-AWS run. This is independent hosting, not a laptop tunnel. Student credits remain finite.
+- Actual end-to-end recording: **pending**, using the genuine AWS workflow above with secrets hidden.
+- Reviewer access to the private GitHub repository: **not confirmed**; do not publish the repository or invite an unspecified reviewer automatically.
+- Larger data: real AWS tested at 50,000 rows; existing 3-million-row CI benchmark remains separate synthetic-provider evidence, not a real-AWS measurement.
 
 Source, tests and reproducible fixture integration are useful evidence; they do not erase these remaining assessment requirements.

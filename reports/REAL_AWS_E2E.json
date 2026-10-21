@@ -1,0 +1,1268 @@
+{
+  "checked_at": "2026-10-21T11:22:29.293896+00:00",
+  "base_url": "https://clearflow-patternforge.australiaeast.cloudapp.azure.com",
+  "real_aws": true,
+  "all_executed_checks_passed": true,
+  "stage_1_complete": false,
+  "bucket": "patternforge-test-20261021-a7f4c2",
+  "region": "ap-southeast-2",
+  "checks": [
+    {
+      "name": "SDK targets genuine Amazon AWS endpoint",
+      "passed": true
+    },
+    {
+      "name": "AWS bytes match local fixture: test_data.csv",
+      "passed": true
+    },
+    {
+      "name": "AWS bytes match local fixture: test_data.xlsx",
+      "passed": true
+    },
+    {
+      "name": "Read-only identity cannot enumerate all account buckets (SDK)",
+      "passed": true
+    },
+    {
+      "name": "Website gate blocks dataset API",
+      "passed": true
+    },
+    {
+      "name": "Connection/dataset lifetimes 1/24 hours",
+      "passed": true
+    },
+    {
+      "name": "Database, queue, worker, Spark and model configured",
+      "passed": true
+    },
+    {
+      "name": "Application connection is amazon_s3, never sample",
+      "passed": true
+    },
+    {
+      "name": "Both real AWS files are listed and selectable",
+      "passed": true
+    },
+    {
+      "name": "Incorrect real-signature credentials safely rejected by real AWS",
+      "passed": true
+    },
+    {
+      "name": "Nonexistent bucket safely rejected by real AWS",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Independent snapshot equals AWS object bytes: test_data.csv",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Real replace counts / two Spark executors / eight partitions",
+      "passed": true
+    },
+    {
+      "name": "Ten complete pages / 1000 unique IDs",
+      "passed": true
+    },
+    {
+      "name": "Every replacement matches independent source",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Ten complete pages / 1000 unique IDs",
+      "passed": true
+    },
+    {
+      "name": "Every extracted identifier / null is correct",
+      "passed": true
+    },
+    {
+      "name": "Extraction 900 non-null / 100 null",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Multi-column normalization changes 1000 cells each",
+      "passed": true
+    },
+    {
+      "name": "Ten complete pages / 1000 unique IDs",
+      "passed": true
+    },
+    {
+      "name": "Every normalized value matches independent calculation",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Independent snapshot equals AWS object bytes: test_data.xlsx",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Real replace counts / two Spark executors / eight partitions",
+      "passed": true
+    },
+    {
+      "name": "Ten complete pages / 1000 unique IDs",
+      "passed": true
+    },
+    {
+      "name": "Every replacement matches independent source",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Ten complete pages / 1000 unique IDs",
+      "passed": true
+    },
+    {
+      "name": "Every extracted identifier / null is correct",
+      "passed": true
+    },
+    {
+      "name": "Extraction 900 non-null / 100 null",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Multi-column normalization changes 1000 cells each",
+      "passed": true
+    },
+    {
+      "name": "Ten complete pages / 1000 unique IDs",
+      "passed": true
+    },
+    {
+      "name": "Every normalized value matches independent calculation",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Multi-column email replacement 800 / 700",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Repeated validated plan uses Redis cache",
+      "passed": true
+    },
+    {
+      "name": "Both retained datasets listed",
+      "passed": true
+    },
+    {
+      "name": "Expired real connection cannot list new files",
+      "passed": true
+    },
+    {
+      "name": "Expired real connection cannot import new files",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Snapshot still processes after connection expiry: test_data.csv",
+      "passed": true
+    },
+    {
+      "name": "Dataset retention unchanged by connection expiry",
+      "passed": true
+    },
+    {
+      "name": "HTTP submission immediately returns queued task",
+      "passed": true
+    },
+    {
+      "name": "Persisted task reaches SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Snapshot still processes after connection expiry: test_data.xlsx",
+      "passed": true
+    },
+    {
+      "name": "Dataset retention unchanged by connection expiry",
+      "passed": true
+    },
+    {
+      "name": "Different browser session cannot access dataset",
+      "passed": true
+    },
+    {
+      "name": "Original AWS object unchanged: test_data.csv",
+      "passed": true
+    },
+    {
+      "name": "Original AWS object unchanged: test_data.xlsx",
+      "passed": true
+    }
+  ],
+  "aws_objects": [
+    {
+      "key": "test_data.csv",
+      "bytes": 130760,
+      "sha256": "1982f7bed81768f67e6c222fd07f178202cdf17aafb6b3cf79fe8ade98867fca",
+      "etag": "\"1d6b1a9fcf3a961a8354bf25ad02cf31\"",
+      "version_id": null,
+      "aws_request_id": "JPQ22HRHYAQCMRDZ"
+    },
+    {
+      "key": "test_data.xlsx",
+      "bytes": 37719,
+      "sha256": "8414f6168ddcb232c514f4e224a8133058dc2111ccdeb54dc1eea957eba672e2",
+      "etag": "\"a8eb3007455fd280ce42fe7bdca4005d\"",
+      "version_id": null,
+      "aws_request_id": "JPQABDJCMGVPKNBY"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "b19749e0-0d4b-4934-9a02-5176c5ccbd95",
+      "kind": "inspect",
+      "operation": null,
+      "source_key": "test_data.csv",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "IMPORTING",
+          "progress": 25,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:22:31.630388Z",
+      "started_at": "2026-10-21T11:22:33.891885Z",
+      "finished_at": "2026-10-21T11:22:46.195813Z",
+      "dataset_expires_at": "2026-10-22T11:22:46.195809Z",
+      "input_dataset_id": null,
+      "plan": {},
+      "error": null,
+      "metadata": {
+        "row_count": null,
+        "changed_cells": null,
+        "cache_hit": false,
+        "partitions": null,
+        "executor_count": null,
+        "spark_seconds": null,
+        "import_sha256": "1982f7bed81768f67e6c222fd07f178202cdf17aafb6b3cf79fe8ade98867fca"
+      }
+    },
+    {
+      "id": "266dac33-f761-42a4-be9d-38f84bb37881",
+      "kind": "transform",
+      "operation": "regex_replace",
+      "source_key": "test_data.csv",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "GENERATING_PLAN",
+          "progress": 20,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:22:48.134001Z",
+      "started_at": "2026-10-21T11:22:48.908119Z",
+      "finished_at": "2026-10-21T11:23:10.464029Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "b19749e0-0d4b-4934-9a02-5176c5ccbd95",
+      "plan": {
+        "group": 0,
+        "steps": [],
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+        "operation": "regex_replace",
+        "explanation": "Find email substrings."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Email": 800
+        },
+        "cache_hit": false,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.196,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "b16edc03-eed4-45bf-bdb7-040fd7571adb",
+      "kind": "transform",
+      "operation": "regex_extract",
+      "source_key": "test_data.csv",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "GENERATING_PLAN",
+          "progress": 20,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:23:11.018022Z",
+      "started_at": "2026-10-21T11:23:13.934146Z",
+      "finished_at": "2026-10-21T11:23:35.841878Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "b19749e0-0d4b-4934-9a02-5176c5ccbd95",
+      "plan": {
+        "group": 0,
+        "steps": [],
+        "pattern": "ORD-\\d+",
+        "operation": "regex_extract",
+        "explanation": "Extract order identifiers starting with ORD followed by digits."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "OrderID": 900
+        },
+        "cache_hit": false,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.378,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "3022f50d-44e5-41c7-b4a6-6edbfc491133",
+      "kind": "transform",
+      "operation": "normalize",
+      "source_key": "test_data.csv",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "GENERATING_PLAN",
+          "progress": 20,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:23:38.015840Z",
+      "started_at": "2026-10-21T11:23:38.963883Z",
+      "finished_at": "2026-10-21T11:24:00.412805Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "b19749e0-0d4b-4934-9a02-5176c5ccbd95",
+      "plan": {
+        "group": 0,
+        "steps": [
+          "trim",
+          "collapse_whitespace",
+          "lowercase"
+        ],
+        "pattern": null,
+        "operation": "normalize",
+        "explanation": "The instruction specifies to trim leading and trailing spaces, collapse repeated whitespace, and convert the text to lowercase."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Name": 1000,
+          "Status": 1000
+        },
+        "cache_hit": false,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.41,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "8af40da9-8138-456d-b6e1-63928333678b",
+      "kind": "inspect",
+      "operation": null,
+      "source_key": "test_data.xlsx",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "IMPORTING",
+          "progress": 25,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:24:01.061264Z",
+      "started_at": "2026-10-21T11:24:03.996284Z",
+      "finished_at": "2026-10-21T11:24:17.362946Z",
+      "dataset_expires_at": "2026-10-22T11:24:17.362942Z",
+      "input_dataset_id": null,
+      "plan": {},
+      "error": null,
+      "metadata": {
+        "row_count": null,
+        "changed_cells": null,
+        "cache_hit": false,
+        "partitions": null,
+        "executor_count": null,
+        "spark_seconds": null,
+        "import_sha256": "8414f6168ddcb232c514f4e224a8133058dc2111ccdeb54dc1eea957eba672e2"
+      }
+    },
+    {
+      "id": "58febb4c-0ec6-4703-9c3d-9f702ec7487a",
+      "kind": "transform",
+      "operation": "regex_replace",
+      "source_key": "test_data.xlsx",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:24:17.533688Z",
+      "started_at": "2026-10-21T11:24:19.015354Z",
+      "finished_at": "2026-10-21T11:24:33.148177Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "8af40da9-8138-456d-b6e1-63928333678b",
+      "plan": {
+        "group": 0,
+        "steps": [],
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+        "operation": "regex_replace",
+        "explanation": "Find email substrings."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Email": 800
+        },
+        "cache_hit": true,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.362,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "14125c43-d56b-44c6-872f-d8a6bb9efbf5",
+      "kind": "transform",
+      "operation": "regex_extract",
+      "source_key": "test_data.xlsx",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:24:34.334849Z",
+      "started_at": "2026-10-21T11:24:39.036425Z",
+      "finished_at": "2026-10-21T11:24:54.179656Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "8af40da9-8138-456d-b6e1-63928333678b",
+      "plan": {
+        "group": 0,
+        "steps": [],
+        "pattern": "ORD-\\d+",
+        "operation": "regex_extract",
+        "explanation": "Extract order identifiers starting with ORD followed by digits."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "OrderID": 900
+        },
+        "cache_hit": true,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.482,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "b22893e9-754b-49d8-a78e-8f4cf8c45113",
+      "kind": "transform",
+      "operation": "normalize",
+      "source_key": "test_data.xlsx",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:24:55.271171Z",
+      "started_at": "2026-10-21T11:24:59.068926Z",
+      "finished_at": "2026-10-21T11:25:14.217318Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "8af40da9-8138-456d-b6e1-63928333678b",
+      "plan": {
+        "group": 0,
+        "steps": [
+          "trim",
+          "collapse_whitespace",
+          "lowercase"
+        ],
+        "pattern": null,
+        "operation": "normalize",
+        "explanation": "The instruction specifies to trim leading and trailing spaces, collapse repeated whitespace, and convert the text to lowercase."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Name": 1000,
+          "Status": 1000
+        },
+        "cache_hit": true,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.698,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "baa0ce85-98e3-4cbd-9002-cd344c6e6c95",
+      "kind": "transform",
+      "operation": "regex_replace",
+      "source_key": "test_data.csv",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "GENERATING_PLAN",
+          "progress": 20,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:25:16.147167Z",
+      "started_at": "2026-10-21T11:25:38.434419Z",
+      "finished_at": "2026-10-21T11:26:10.001913Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "b19749e0-0d4b-4934-9a02-5176c5ccbd95",
+      "plan": {
+        "group": 0,
+        "steps": [],
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+        "operation": "regex_replace",
+        "explanation": "Find email substrings."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Email": 800,
+          "BackupEmail": 700
+        },
+        "cache_hit": false,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.613,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "7bc7291b-7866-4c06-8937-cb0cc5362f4d",
+      "kind": "transform",
+      "operation": "regex_replace",
+      "source_key": "test_data.csv",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:26:11.637641Z",
+      "started_at": "2026-10-21T11:26:14.147743Z",
+      "finished_at": "2026-10-21T11:26:28.285119Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "b19749e0-0d4b-4934-9a02-5176c5ccbd95",
+      "plan": {
+        "group": 0,
+        "steps": [],
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+        "operation": "regex_replace",
+        "explanation": "Find email substrings."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Email": 800
+        },
+        "cache_hit": true,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.314,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "a4caddf5-5eb5-48fb-8042-ec0199c811c4",
+      "kind": "transform",
+      "operation": "regex_replace",
+      "source_key": "test_data.csv",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:26:55.309672Z",
+      "started_at": "2026-10-21T11:26:59.207345Z",
+      "finished_at": "2026-10-21T11:27:13.385298Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "b19749e0-0d4b-4934-9a02-5176c5ccbd95",
+      "plan": {
+        "group": 0,
+        "steps": [],
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+        "operation": "regex_replace",
+        "explanation": "Find email substrings."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Email": 800
+        },
+        "cache_hit": true,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.355,
+        "import_sha256": null
+      }
+    },
+    {
+      "id": "8c02eba9-24a2-41ea-8d36-cf49b9d59dba",
+      "kind": "transform",
+      "operation": "regex_replace",
+      "source_key": "test_data.xlsx",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "created_at": "2026-10-21T11:27:13.854470Z",
+      "started_at": "2026-10-21T11:27:14.221415Z",
+      "finished_at": "2026-10-21T11:27:29.464411Z",
+      "dataset_expires_at": null,
+      "input_dataset_id": "8af40da9-8138-456d-b6e1-63928333678b",
+      "plan": {
+        "group": 0,
+        "steps": [],
+        "pattern": "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b",
+        "operation": "regex_replace",
+        "explanation": "Find email substrings."
+      },
+      "error": null,
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Email": 800
+        },
+        "cache_hit": true,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.501,
+        "import_sha256": null
+      }
+    }
+  ],
+  "web_latency_seconds_during_processing": [
+    0.016,
+    0.032,
+    0.032,
+    0.031,
+    0.032,
+    0.016,
+    0.031,
+    0.016,
+    0.015,
+    0.031,
+    0.031,
+    0.031,
+    0.016,
+    0.016,
+    0.016,
+    0.031,
+    0.016,
+    0.016,
+    0.031,
+    0.015,
+    0.015,
+    0.015,
+    0.032,
+    0.032,
+    0.015,
+    0.031,
+    0.047,
+    0.032,
+    0.031,
+    0.031,
+    0.031,
+    0.016,
+    0.015,
+    0.031,
+    0.031,
+    0.032,
+    0.031,
+    0.016,
+    0.047,
+    0.031,
+    0.016,
+    0.032,
+    0.031,
+    0.031,
+    0.016,
+    0.031,
+    0.031,
+    0.031,
+    0.016,
+    0.016,
+    0.016,
+    0.032,
+    0.031,
+    0.031,
+    0.031,
+    0.015,
+    0.015,
+    0.016,
+    0.031,
+    0.031,
+    0.016,
+    0.032,
+    0.031,
+    0.031,
+    0.032,
+    0.047,
+    0.016,
+    0.032,
+    0.031,
+    0.015,
+    0.015,
+    0.015,
+    0.016,
+    0.032,
+    0.031,
+    0.016,
+    0.016,
+    0.031,
+    0.015,
+    0.015,
+    0.015,
+    0.015,
+    0.016,
+    0.016,
+    0.016,
+    0.031,
+    0.031,
+    0.031,
+    0.016,
+    0.031,
+    0.031,
+    0.031,
+    0.032,
+    0.032,
+    0.031,
+    0.031,
+    0.031,
+    0.016,
+    0.016,
+    0.015,
+    0.047,
+    0.031,
+    0.032,
+    0.015,
+    0.015,
+    0.015,
+    0.016,
+    0.016,
+    0.016,
+    0.031,
+    0.016,
+    0.031,
+    0.031,
+    0.031,
+    0.032,
+    0.031,
+    0.031,
+    0.032,
+    0.032,
+    0.031,
+    0.031,
+    0.031,
+    0.016,
+    0.016,
+    0.016,
+    0.015,
+    0.031,
+    0.016,
+    0.031,
+    0.015,
+    0.032,
+    0.032
+  ],
+  "limitations": [
+    "API acceptance is separate from browser evidence.",
+    "No large-dataset, second authorized bucket or injected retry-fault test in this run.",
+    "ListAllMyBuckets denial proves limited SDK permission, not a website connection denial to another existing bucket."
+  ],
+  "elapsed_seconds": 301.531,
+  "connection_id": "9475432e-cf9e-4bd1-bf75-a07347399370",
+  "expiry_test": "Accelerated application connection expiry, not elapsed one-hour or natural STS expiration."
+}

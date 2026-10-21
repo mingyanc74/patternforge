@@ -1,5 +1,7 @@
 # Validation record — 2026-10-20
 
+**2026-10-21 real-service update:** the public Azure deployment now passed 65 genuine-AWS end-to-end checks and 23 stability checks, plus real browser CSV/Excel operation. Two authorized private buckets, read-only keys, real Qwen/Celery/Redis/PySpark, 50,000 rows and controlled expiry/retry were tested. [Current evidence and remaining boundaries](REAL_AWS_ACCEPTANCE.md). The dated sections below are historical; their then-pending AWS/host resources are not the current status. The demo video and reviewer access still need completion/confirmation.
+
 ## Completed locally
 
 - Django system check: passed.

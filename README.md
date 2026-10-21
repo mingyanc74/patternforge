@@ -22,9 +22,11 @@ A private, natural-language workspace for transforming CSV and Excel data from *
 
 The repository contains real provider integrations. It does not invent model output when a model key is missing.
 
-The user-approved optional sample bucket is now live at the public URL below: **44 public end-to-end checks passed** using synthetic data and the genuine model/queue/distributed Spark stack, plus 25 HTTPS/session checks. A browser-submitted 1,000-row job also completed with 800 expected email replacements. No AWS account is needed for this explicitly simulated mode. [Acceptance evidence and limitations](reports/SAMPLE_ACCEPTANCE.md) · [How to test](docs/SAMPLE_BUCKET_zh.md). This does not complete the original real-Amazon-S3 requirement.
+**Real Amazon AWS acceptance completed on 2026-10-21:** 65 end-to-end checks and 23 stability checks passed against the public deployment using two genuine private S3 buckets, user-entered read-only keys, CSV/Excel snapshots and actual model/Celery/Redis/PySpark processing. Both formats passed all three operations; a real 50,000-row S3 file produced 40,000 expected email replacements using two executors/eight partitions (Spark 13.305 seconds). The actual browser also connected, imported and displayed successful results. See [real AWS evidence, raw reports and limitations](reports/REAL_AWS_ACCEPTANCE.md) · [中文测试指南](docs/REAL_AWS_ACCEPTANCE_zh.md). Expiry was accelerated for one app connection; retry used an isolated one-attempt injected fault, not a natural AWS outage. No full 24-hour observation or real-AWS million-row run is claimed.
 
-Current free-only cloud choice: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Clearflow](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). External HTTPS/session checks passed 25 checks, genuine model semantics passed 10/10 bounded cases, and a synthetic 10,000-row Spark check used two executors and eight partitions. See [actual Azure acceptance and remaining gaps](docs/AZURE_ACCEPTANCE_zh.md). Real AWS S3 and the completed-job demo video are still pending. Student credit is finite, not a permanently free server.
+The optional sample bucket remains as **historical development evidence**, not final AWS acceptance. Its earlier 44 checks and 25 HTTPS/session checks used explicitly synthetic sources; they are not included in the 88 real-service checks above. [Sample evidence](reports/SAMPLE_ACCEPTANCE.md) · [Sample guide](docs/SAMPLE_BUCKET_zh.md). No independent simulated public acceptance was repeated after the final real-AWS requirement was confirmed.
+
+Current cloud host: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Clearflow](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). Latest external HTTPS/password/session checks passed 26 checks. Earlier genuine-model semantics passed 10/10 bounded cases, separate from the subsequent real-AWS jobs. See [Azure acceptance](docs/AZURE_ACCEPTANCE_zh.md). The completed-job demo video and reviewer repository access are still pending/need confirmation. Azure student credit and AWS Free plan allowances are finite, not permanently free hosting.
 
 Custom identifiers need their format in the instruction (for example, a prefix plus digits), because private data rows are never sent to the model. Refused plans stop before Spark and are not cached. The provider uses operation-specific instructions and public few-shot examples; actual uncached requests still invoke the genuine model, never a built-in prompt-to-regex fallback.
 
@@ -36,7 +38,7 @@ On commit 2f5efb9a, [application CI](https://github.com/mingyanc74/patternforge/
 
 The [3-million-row, 10-column distributed benchmark](reports/BENCHMARK.md) passed: each of the three operations used two real executors, and Spark processing took 102.6–107.5 seconds per operation. See [validation evidence](reports/VALIDATION.md) for tested commits and limitations.
 
-**Before final assessment submission:** deploy the complete genuine-model stack on the selected host, perform the real-AWS acceptance run there, provide a working public HTTPS URL and embed the real demonstration video. Track these in [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
+**Before final assessment submission:** record/embed the real-service demonstration video and confirm reviewers can access the private repository. The public genuine-model stack and documented real-AWS runs now exist; million-row fixture timing remains distinct from the 50,000-row genuine-AWS measurement. Track remaining items in [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
 
 ## Quick start: complete stack
 
@@ -237,7 +239,7 @@ Caddy terminates HTTPS; secure cookies, trusted origins and HTTPS redirects are 
 
 ## Demo video and public URL
 
-**Public URL:** https://clearflow-patternforge.australiaeast.cloudapp.azure.com/ — external HTTPS and processing service health verified on 2026-10-21. Real S3 job acceptance is pending.
+**Public URL:** https://clearflow-patternforge.australiaeast.cloudapp.azure.com/ — external HTTPS, password gate, real S3 CSV/Excel jobs, genuine model, queue, distributed Spark and results verified on 2026-10-21. [Actual AWS report](reports/REAL_AWS_ACCEPTANCE.md). Access password and read-only AWS keys are provided privately, never in this repository.
 
 **Demo video:** not recorded yet. Use the exact recording checklist in [SUBMISSION.md](docs/SUBMISSION.md), then replace these lines with the verified URL and an embedded video link/player. A UI-only recording does not meet the required real S3 plus completed asynchronous job demonstration.
 

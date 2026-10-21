@@ -1,5 +1,7 @@
 # 模拟 S3 测试桶
 
+**本页是保留的开发/演示说明，不是最终 AWS 验收依据。** 2026-10-21 用户重新确认必须使用真实 AWS；随后已完成真实双桶、CSV / Excel 和 50,000 行测试，见 [真实 AWS 验收](REAL_AWS_ACCEPTANCE_zh.md)。没有把本页历史模拟成绩算入真实 AWS 的 88 项检查。
+
 已上线：https://clearflow-patternforge.australiaeast.cloudapp.azure.com/
 
 正式环境 44 项完整功能验收与 25 项 HTTPS/会话检查通过；另有浏览器实际提交并查看成功结果。[验收记录](../reports/SAMPLE_ACCEPTANCE.md)。
@@ -40,4 +42,4 @@
 
 ## 交付边界
 
-模拟来源可验证应用功能，但不能证明 AWS 权限、网络连接、STS 过期或 S3A 读取行为。保留真实 S3 验收缺口，后续有真实只读桶时直接使用原有连接入口。演示录像应明确显示“Simulated S3”，不能把它描述成真实 Amazon S3 验收。
+模拟来源可验证应用功能，但不能证明 AWS 权限、网络连接、STS 过期或 S3A 读取行为。真实 S3 已另行通过原有连接入口执行，详见上述独立报告；模拟模式本身仍不属于真实 AWS 证据。若演示录像展示本模式，必须标明“Simulated S3”，不能将其描述成真实 Amazon S3 验收。

@@ -1,0 +1,599 @@
+{
+  "checked_at": "2026-10-21T11:41:14.127314+00:00",
+  "real_aws": true,
+  "checks": [
+    {
+      "name": "Second bucket genuine AWS object matches local file: test_data.csv",
+      "passed": true
+    },
+    {
+      "name": "Second bucket genuine AWS object matches local file: large_test_data.csv",
+      "passed": true
+    },
+    {
+      "name": "Same application accepts two different real AWS buckets",
+      "passed": true
+    },
+    {
+      "name": "Second bucket lists copied CSV and larger CSV",
+      "passed": true
+    },
+    {
+      "name": "Task reaches expected SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Task reaches expected SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Different bucket real import and transform succeed",
+      "passed": true
+    },
+    {
+      "name": "Task reaches expected SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Large snapshot matches genuine S3 bytes",
+      "passed": true
+    },
+    {
+      "name": "Task reaches expected SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Actual larger workload: 50000 rows / 40000 changed cells",
+      "passed": true
+    },
+    {
+      "name": "Larger workload distributed over two executors / eight partitions",
+      "passed": true
+    },
+    {
+      "name": "All 50000 larger result rows paged without duplicates",
+      "passed": true
+    },
+    {
+      "name": "Website remains responsive during background processing",
+      "passed": true
+    },
+    {
+      "name": "Cancel is requested on an actually running task",
+      "passed": true
+    },
+    {
+      "name": "Task reaches expected CANCELLED",
+      "passed": true
+    },
+    {
+      "name": "Cancelled task publishes no partial result",
+      "passed": true
+    },
+    {
+      "name": "Task reaches expected FAILED",
+      "passed": true
+    },
+    {
+      "name": "Genuine AWS file with invalid sheet fails safely",
+      "passed": true
+    },
+    {
+      "name": "Isolated retry test job created",
+      "passed": true
+    },
+    {
+      "name": "Task reaches expected SUCCESS",
+      "passed": true
+    },
+    {
+      "name": "Controlled transient failure retried then real S3 succeeds",
+      "passed": true
+    },
+    {
+      "name": "Worker and dependencies ready after failure/cancel/retry",
+      "passed": true
+    }
+  ],
+  "jobs": [
+    {
+      "id": "99a9767b-37ba-4932-a2aa-5519b5affb6a",
+      "kind": "inspect",
+      "source_key": "test_data.csv",
+      "bucket": "patternforge-control-20261021-a7f4c2",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "expected_status": "SUCCESS",
+      "attempt": 1,
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "IMPORTING",
+          "progress": 25,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "observed_wait_seconds": 15.11,
+      "created_at": "2026-10-21T11:41:16.494519Z",
+      "started_at": "2026-10-21T11:41:19.839902Z",
+      "finished_at": "2026-10-21T11:41:31.152910Z",
+      "metadata": {
+        "row_count": null,
+        "changed_cells": null,
+        "cache_hit": false,
+        "partitions": null,
+        "executor_count": null,
+        "spark_seconds": null,
+        "import_sha256": "1982f7bed81768f67e6c222fd07f178202cdf17aafb6b3cf79fe8ade98867fca"
+      },
+      "error": null
+    },
+    {
+      "id": "2113dc2c-dd24-46cf-b74f-1ee2e0e39ec8",
+      "kind": "transform",
+      "source_key": "test_data.csv",
+      "bucket": "patternforge-control-20261021-a7f4c2",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "expected_status": "SUCCESS",
+      "attempt": 1,
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "GENERATING_PLAN",
+          "progress": 20,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "observed_wait_seconds": 26.891,
+      "created_at": "2026-10-21T11:41:31.628098Z",
+      "started_at": "2026-10-21T11:41:34.859662Z",
+      "finished_at": "2026-10-21T11:41:57.463177Z",
+      "metadata": {
+        "row_count": 1000,
+        "changed_cells": {
+          "Email": 800
+        },
+        "cache_hit": false,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 11.489,
+        "import_sha256": null
+      },
+      "error": null
+    },
+    {
+      "id": "1b31da8a-7894-47ee-8ea8-be94d90c9749",
+      "kind": "inspect",
+      "source_key": "large_test_data.csv",
+      "bucket": "patternforge-control-20261021-a7f4c2",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "expected_status": "SUCCESS",
+      "attempt": 1,
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "IMPORTING",
+          "progress": 25,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "observed_wait_seconds": 13.985,
+      "created_at": "2026-10-21T11:41:58.614715Z",
+      "started_at": "2026-10-21T11:41:59.894252Z",
+      "finished_at": "2026-10-21T11:42:12.369745Z",
+      "metadata": {
+        "row_count": null,
+        "changed_cells": null,
+        "cache_hit": false,
+        "partitions": null,
+        "executor_count": null,
+        "spark_seconds": null,
+        "import_sha256": "7113e573bd99aef27610586d95d382a42be19dc341ab5dbab2b0431beb1c30a5"
+      },
+      "error": null
+    },
+    {
+      "id": "b522f505-ae3f-48a4-b021-c360c61e0f0a",
+      "kind": "transform",
+      "source_key": "large_test_data.csv",
+      "bucket": "patternforge-control-20261021-a7f4c2",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "expected_status": "SUCCESS",
+      "attempt": 1,
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "VALIDATING_RULE",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "TRANSFORMING",
+          "progress": 55,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "WRITING",
+          "progress": 80,
+          "attempt": 1
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 1
+        }
+      ],
+      "observed_wait_seconds": 19.781,
+      "created_at": "2026-10-21T11:42:12.642160Z",
+      "started_at": "2026-10-21T11:42:14.918293Z",
+      "finished_at": "2026-10-21T11:42:32.072726Z",
+      "metadata": {
+        "row_count": 50000,
+        "changed_cells": {
+          "Email": 40000
+        },
+        "cache_hit": true,
+        "partitions": 8,
+        "executor_count": 2,
+        "spark_seconds": 13.305,
+        "import_sha256": null
+      },
+      "error": null
+    },
+    {
+      "id": "a8bbeee3-4476-4639-b4ff-5b8f48967712",
+      "kind": "transform",
+      "source_key": "large_test_data.csv",
+      "bucket": "patternforge-control-20261021-a7f4c2",
+      "source_type": "amazon_s3",
+      "status": "CANCELLED",
+      "expected_status": "CANCELLED",
+      "attempt": 1,
+      "states": [
+        {
+          "status": "RUNNING",
+          "stage": "CANCELLING",
+          "progress": 30,
+          "attempt": 1
+        },
+        {
+          "status": "CANCELLED",
+          "stage": "CANCELLED",
+          "progress": 30,
+          "attempt": 1
+        }
+      ],
+      "observed_wait_seconds": 1.078,
+      "created_at": "2026-10-21T11:42:36.803628Z",
+      "started_at": "2026-10-21T11:42:47.291643Z",
+      "finished_at": "2026-10-21T11:42:48.349178Z",
+      "metadata": {
+        "row_count": null,
+        "changed_cells": null,
+        "cache_hit": true,
+        "partitions": null,
+        "executor_count": null,
+        "spark_seconds": null,
+        "import_sha256": null
+      },
+      "error": {
+        "code": "CANCELLED",
+        "message": "Cancelled by user."
+      }
+    },
+    {
+      "id": "dfb746b2-9374-4240-9ae7-8a4a8a99d268",
+      "kind": "inspect",
+      "source_key": "test_data.xlsx",
+      "bucket": "patternforge-test-20261021-a7f4c2",
+      "source_type": "amazon_s3",
+      "status": "FAILED",
+      "expected_status": "FAILED",
+      "attempt": 1,
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "QUEUED",
+          "progress": 0,
+          "attempt": 0
+        },
+        {
+          "status": "RUNNING",
+          "stage": "IMPORTING",
+          "progress": 25,
+          "attempt": 1
+        },
+        {
+          "status": "FAILED",
+          "stage": "FAILED",
+          "progress": 25,
+          "attempt": 1
+        }
+      ],
+      "observed_wait_seconds": 5.422,
+      "created_at": "2026-10-21T11:42:48.791531Z",
+      "started_at": "2026-10-21T11:42:49.986821Z",
+      "finished_at": "2026-10-21T11:42:53.225522Z",
+      "metadata": {
+        "row_count": null,
+        "changed_cells": null,
+        "cache_hit": null,
+        "partitions": null,
+        "executor_count": null,
+        "spark_seconds": null,
+        "import_sha256": null
+      },
+      "error": {
+        "code": "SHEET_NOT_FOUND",
+        "message": "Select an existing worksheet."
+      }
+    },
+    {
+      "id": "9b8bdbc4-9200-4afd-b94b-fbbbb0ada0d2",
+      "kind": "inspect",
+      "source_key": "test_data.csv",
+      "bucket": "patternforge-test-20261021-a7f4c2",
+      "source_type": "amazon_s3",
+      "status": "SUCCESS",
+      "expected_status": "SUCCESS",
+      "attempt": 2,
+      "states": [
+        {
+          "status": "QUEUED",
+          "stage": "RETRYING",
+          "progress": 10,
+          "attempt": 1
+        },
+        {
+          "status": "RUNNING",
+          "stage": "IMPORTING",
+          "progress": 25,
+          "attempt": 2
+        },
+        {
+          "status": "RUNNING",
+          "stage": "READING",
+          "progress": 35,
+          "attempt": 2
+        },
+        {
+          "status": "SUCCESS",
+          "stage": "COMPLETED",
+          "progress": 100,
+          "attempt": 2
+        }
+      ],
+      "observed_wait_seconds": 21.641,
+      "created_at": "2026-10-21T11:43:42.192258Z",
+      "started_at": "2026-10-21T11:43:42.210160Z",
+      "finished_at": "2026-10-21T11:44:03.387346Z",
+      "metadata": {
+        "row_count": null,
+        "changed_cells": null,
+        "cache_hit": false,
+        "partitions": null,
+        "executor_count": null,
+        "spark_seconds": null,
+        "import_sha256": "1982f7bed81768f67e6c222fd07f178202cdf17aafb6b3cf79fe8ade98867fca"
+      },
+      "error": null
+    }
+  ],
+  "processing_http_latencies_seconds": [
+    0.062,
+    0.047,
+    0.046,
+    0.047,
+    0.062,
+    0.047,
+    0.047,
+    0.093,
+    0.046,
+    0.047,
+    0.062,
+    0.047,
+    0.047,
+    0.046,
+    0.046,
+    0.047,
+    0.047,
+    0.047,
+    0.047,
+    0.047,
+    0.047,
+    0.047,
+    0.047,
+    0.047,
+    0.032,
+    0.047,
+    0.047,
+    0.047,
+    0.062,
+    0.047,
+    0.047,
+    0.047,
+    0.063,
+    0.046,
+    0.125,
+    0.047,
+    0.047,
+    0.031,
+    0.031,
+    0.031,
+    0.032,
+    0.047,
+    0.031,
+    0.046,
+    0.047,
+    0.062,
+    0.046,
+    0.062,
+    0.062,
+    0.047,
+    0.047,
+    0.031,
+    0.031,
+    0.031,
+    0.032,
+    0.047,
+    0.047,
+    0.047,
+    0.078,
+    0.046,
+    0.047,
+    0.031,
+    0.047,
+    0.047,
+    0.046,
+    0.047,
+    0.046,
+    0.047,
+    0.047,
+    0.032,
+    0.047,
+    0.047,
+    0.125,
+    0.047,
+    0.047,
+    0.046,
+    0.047,
+    0.047,
+    0.047,
+    0.047,
+    0.031,
+    0.046,
+    0.047,
+    0.047,
+    0.093,
+    0.047,
+    0.047,
+    0.047,
+    0.063,
+    0.109,
+    0.079,
+    0.047,
+    0.047,
+    0.047,
+    0.078,
+    0.047
+  ],
+  "buckets": [
+    "patternforge-test-20261021-a7f4c2",
+    "patternforge-control-20261021-a7f4c2"
+  ],
+  "aws_objects": [
+    {
+      "bucket": "patternforge-control-20261021-a7f4c2",
+      "key": "test_data.csv",
+      "bytes": 130760,
+      "sha256": "1982f7bed81768f67e6c222fd07f178202cdf17aafb6b3cf79fe8ade98867fca",
+      "etag": "\"1d6b1a9fcf3a961a8354bf25ad02cf31\"",
+      "aws_request_id": "EE8WV4JCHD8WT30A"
+    },
+    {
+      "bucket": "patternforge-control-20261021-a7f4c2",
+      "key": "large_test_data.csv",
+      "bytes": 4765075,
+      "sha256": "7113e573bd99aef27610586d95d382a42be19dc341ab5dbab2b0431beb1c30a5",
+      "etag": "\"beba95b9cf6accfe7a8da09af464f750\"",
+      "aws_request_id": "EE8W3F15CAF0BZT4"
+    }
+  ],
+  "all_executed_checks_passed": true,
+  "retry_method": "First attempt injected S3_TEMPORARY_ERROR in one isolated operator process. Real outbox/Celery retry downloaded genuine AWS bytes and completed Spark. Not a naturally observed AWS outage.",
+  "elapsed_seconds": 169.406,
+  "connection_ids": [
+    "27c69d6c-2b96-41d9-ab03-c49cab2d0dfd",
+    "851ac48e-241b-42ec-b8dd-bb45364614f0"
+  ]
+}
