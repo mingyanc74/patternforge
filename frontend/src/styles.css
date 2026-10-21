@@ -23,8 +23,36 @@
   --amber: #8c5a13;
   --amber-bg: #fff8eb;
 }
-.data-scroll { max-height:540px; overflow:auto; }
-.data-scroll thead th { position:sticky; top:0; z-index:1; }
+.data-scroll {
+  max-height: 540px;
+  overflow: auto;
+}
+.data-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.sample-card {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 18px;
+  margin-bottom: 24px;
+  border: 1px solid var(--tint-line);
+  border-radius: 6px;
+  background: var(--tint);
+}
+.sample-card p,
+.sample-card small {
+  color: var(--muted);
+}
+.sample-description {
+  display: block;
+  white-space: normal;
+  max-width: 360px;
+  color: var(--muted);
+  padding-top: 4px;
+}
 * {
   box-sizing: border-box;
 }

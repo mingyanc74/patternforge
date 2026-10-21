@@ -8,6 +8,14 @@ class S3Connection(models.Model):
     owner = models.CharField(max_length=64, db_index=True)
     bucket = models.CharField(max_length=255)
     region = models.CharField(max_length=64, default="us-east-1")
+    source_type = models.CharField(
+        max_length=16,
+        default="amazon_s3",
+        choices=[
+            ("amazon_s3", "Amazon S3"),
+            ("sample", "Simulated sample bucket"),
+        ],
+    )
     ciphertext = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()

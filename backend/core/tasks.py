@@ -80,6 +80,13 @@ def run_spark(job, lease, work):
         "max_excel_rows": settings.MAX_EXCEL_ROWS,
         "max_cell_chars": settings.MAX_CELL_CHARS,
     }
+    if job.connection.source_type == "sample":
+        from core.sample_bucket import object_bytes
+
+        suffix = ".xlsx" if job.source_key.endswith(".xlsx") else ".csv"
+        sample_path = work / ("sample-input" + suffix)
+        sample_path.write_bytes(object_bytes(job.source_key))
+        spec["local_source"] = str(sample_path)
     spec_path = work / "spec.json"
     spec_path.write_text(json.dumps(spec), encoding="utf-8")
     try:
@@ -166,7 +173,7 @@ def run_spark(job, lease, work):
         stop_process(process)
         spec_path.unlink(missing_ok=True)
         # A workbook/staged CSV is no longer needed after the driver has stopped.
-        for filename in ("input.xlsx", "excel.csv"):
+        for filename in ("input.xlsx", "excel.csv", "sample-input.csv", "sample-input.xlsx"):
             (work / filename).unlink(missing_ok=True)
 
 

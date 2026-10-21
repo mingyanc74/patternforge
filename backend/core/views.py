@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 
 from core.errors import AppError
 from core.models import Job, Outbox, S3Connection
+from core.sample_bucket import CATALOG
 from core.security import encrypt_credentials
 from core.serializers import ConnectionInput, FileInput, JobInput
 from core.services.results import read_page
@@ -36,7 +37,11 @@ def owner(request):
 
 def live_connection(request, connection_id):
     item = get_object_or_404(S3Connection, id=connection_id, owner=owner(request))
-    if item.disconnected_at or item.expires_at <= timezone.now() or not item.ciphertext:
+    if (
+        item.disconnected_at
+        or item.expires_at <= timezone.now()
+        or (item.source_type != "sample" and not item.ciphertext)
+    ):
         raise AppError("CONNECTION_EXPIRED", "This connection expired. Connect to S3 again.", 410)
     return item
 
@@ -49,6 +54,7 @@ def serialize_job(job, full=True):
         "connection_id": str(job.connection_id),
         "bucket": job.connection.bucket,
         "region": job.connection.region,
+        "source_type": job.connection.source_type,
         "operation": job.config.get("operation"),
         "sheet": job.config.get("sheet", ""),
         "status": job.status,
@@ -84,6 +90,7 @@ class Bootstrap(SessionView):
             {
                 "csrf_token": get_token(request),
                 "llm_configured": bool(settings.LLM_API_KEY and settings.LLM_MODEL),
+                "sample_bucket_enabled": settings.SAMPLE_BUCKET_ENABLED,
                 "limits": {
                     "preview_rows": 100,
                     "max_page_rows": 500,
@@ -154,6 +161,7 @@ class Connections(SessionView):
                         "id": str(item.id),
                         "bucket": item.bucket,
                         "region": item.region,
+                        "source_type": item.source_type,
                         "expires_at": item.expires_at,
                     }
                     for item in connections
@@ -186,9 +194,54 @@ class Connections(SessionView):
             expires_at=timezone.now() + timedelta(hours=settings.CREDENTIAL_TTL_HOURS),
         )
         return Response(
-            {"id": str(item.id), "bucket": item.bucket, "region": item.region, "expires_at": item.expires_at},
+            serialize_connection(item),
             status=201,
         )
+
+
+def serialize_connection(item):
+    return {
+        "id": str(item.id),
+        "bucket": item.bucket,
+        "region": item.region,
+        "source_type": item.source_type,
+        "expires_at": item.expires_at,
+    }
+
+
+class SampleConnection(SessionView):
+    def post(self, request):
+        if not settings.SAMPLE_BUCKET_ENABLED:
+            raise AppError("SAMPLE_DISABLED", "The sample bucket is disabled on this server.", 404)
+        # Never accept credentials, paths, bucket names or endpoints for this adapter.
+        if request.data:
+            raise AppError("INVALID_SAMPLE_REQUEST", "The sample connection takes no parameters.")
+        from core.sample_bucket import BUCKET, REGION
+
+        identity = owner(request)
+        with transaction.atomic():
+            if not request.session.session_key:
+                request.session.save()
+            Session.objects.select_for_update().get(session_key=request.session.session_key)
+            item = S3Connection.objects.filter(
+                owner=identity,
+                source_type="sample",
+                disconnected_at__isnull=True,
+                expires_at__gt=timezone.now(),
+            ).first()
+            if item:
+                return Response(serialize_connection(item))
+            if S3Connection.objects.filter(owner=identity, disconnected_at__isnull=True).count() >= 20:
+                raise AppError("CONNECTION_LIMIT", "Disconnect an existing connection first.", 429)
+            item = S3Connection.objects.create(
+                owner=identity,
+                bucket=BUCKET,
+                region=REGION,
+                source_type="sample",
+                ciphertext="",
+                expires_at=timezone.now() + timedelta(hours=settings.CREDENTIAL_TTL_HOURS),
+            )
+        return Response(serialize_connection(item), status=201)
 
 
 class Disconnect(SessionView):
@@ -242,6 +295,11 @@ class Files(SessionView):
                         "size": entry["Size"],
                         "modified": entry["LastModified"],
                         "supported": entry["Key"].lower().endswith((".csv", ".xlsx")),
+                        **(
+                            {"description": CATALOG.get(entry["Key"], "")}
+                            if item.source_type == "sample"
+                            else {}
+                        ),
                     }
                     for entry in result.get("Contents", [])
                     if not entry["Key"].endswith("/")

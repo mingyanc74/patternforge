@@ -16,6 +16,7 @@ A private, natural-language workspace for transforming CSV and Excel data from *
 - Track persistent jobs, recover after refresh, retry transient failures, and cancel actual computation.
 - Browse immutable Parquet results using signed cursors without recomputing or collecting the whole dataset.
 - Monitor workers with Flower and persisted job metrics. Start the complete stack with Docker Compose.
+- Optional **simulated read-only bucket** for testing without AWS credentials (`SAMPLE_BUCKET_ENABLED=1`): synthetic CSV/Excel data, the same genuine model/Celery/Spark pipeline, and explicit sample labels in API/UI. It is not Amazon S3 and is not evidence of real-AWS acceptance. [Sample test guide](docs/SAMPLE_BUCKET_zh.md).
 
 ## Honest validation status
 

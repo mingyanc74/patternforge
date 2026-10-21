@@ -55,10 +55,7 @@ def run(spec_path):
     local_source = spec.get("local_source")
     credentials = None
     client = None
-    if local_source:
-        source = str(Path(local_source).resolve())
-    else:
-
+    if not local_source or spec.get("lease"):
         def lease_guard():
             # Independent guard: even if the Celery parent dies, an orphaned Spark driver stops.
             import django
@@ -90,6 +87,10 @@ def run(spec_path):
                 time.sleep(3)
 
         threading.Thread(target=lease_guard, name="lease-guard", daemon=True).start()
+
+    if local_source:
+        source = str(Path(local_source).resolve())
+    else:
         import boto3
         from botocore.config import Config
 

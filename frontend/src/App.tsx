@@ -404,7 +404,10 @@ export default function App() {
     const linked = connections.find(
       (value) =>
         value.id === item.connection_id ||
-        (value.bucket === item.bucket && value.region === item.region),
+        (value.bucket === item.bucket &&
+          value.region === item.region &&
+          (value.source_type || "amazon_s3") ===
+            (item.source_type || "amazon_s3")),
     );
     setConnection(linked || null);
     setSelected({
@@ -471,11 +474,43 @@ export default function App() {
       setShowSecret(false);
       const matching =
         pendingReuse?.bucket === next.bucket &&
-        pendingReuse?.region === next.region;
+        pendingReuse?.region === next.region &&
+        (pendingReuse?.source_type || "amazon_s3") ===
+          (next.source_type || "amazon_s3");
       if (!matching) {
         clearDraft();
         setPrefix("");
       }
+      go("files");
+      await loadFiles(next, matching ? prefix : "");
+    } catch (value) {
+      report(value);
+    } finally {
+      setConnecting(false);
+    }
+  }
+  async function connectSample() {
+    setConnecting(true);
+    setError("");
+    try {
+      const next = await api.connectSample();
+      const matching =
+        pendingReuse?.source_type === "sample" &&
+        pendingReuse.bucket === next.bucket;
+      if (!matching) clearDraft();
+      setConnection(next);
+      setConnections((old) => [
+        next,
+        ...old.filter((item) => item.id !== next.id),
+      ]);
+      setCredentials((old) => ({
+        ...old,
+        access_key: "",
+        secret_key: "",
+        session_token: "",
+      }));
+      setShowSecret(false);
+      if (!matching) setPrefix("");
       go("files");
       await loadFiles(next, matching ? prefix : "");
     } catch (value) {
@@ -629,7 +664,9 @@ export default function App() {
       : screen === "connection"
         ? "Choose the S3 bucket that contains your CSV or Excel file."
         : screen === "files"
-          ? "s3://" + (connection?.bucket || "") + " · CSV and Excel (.xlsx)"
+          ? (connection?.source_type === "sample" ? "sample://" : "s3://") +
+            (connection?.bucket || "") +
+            " · CSV and Excel (.xlsx)"
           : screen === "results"
             ? job?.source_key
             : "";
@@ -827,12 +864,37 @@ export default function App() {
         {!initializing && noServices && (
           <div className="notice setup-notice">
             <Info />
-            <span>
-              Processing services need setup. This workspace is live, not a
-              simulation.
-            </span>
+            <span>Processing services need setup before jobs can run.</span>
             <button className="link" onClick={() => setDialog("help")}>
               View setup
+            </button>
+          </div>
+        )}
+        {screen !== "history" &&
+          (screen === "job" || screen === "results"
+            ? job?.source_type === "sample"
+            : connection?.source_type === "sample") && (
+            <div className="notice warning" role="note">
+              <Info />
+              <span>
+                <strong>Simulated S3 bucket.</strong> Synthetic, read-only
+                files; not Amazon S3. Model generation, queued jobs and Spark
+                processing run on the server.
+              </span>
+            </div>
+          )}
+        {boot?.sample_bucket_enabled && screen === "history" && (
+          <div className="notice">
+            <Database />
+            <span>
+              No AWS account? Use synthetic files in the simulated S3 bucket. No
+              keys required.
+            </span>
+            <button
+              disabled={connecting || processing}
+              onClick={() => confirmDraft(() => void connectSample())}
+            >
+              {connecting ? "Connecting…" : "Try sample bucket"}
             </button>
           </div>
         )}
@@ -900,6 +962,29 @@ export default function App() {
                 )}
               </div>
               <div className="panel-body">
+                {boot?.sample_bucket_enabled && (
+                  <div className="sample-card">
+                    <h3>Try without AWS credentials</h3>
+                    <p>
+                      Simulated S3 bucket with synthetic CSV and Excel files.
+                      Not Amazon S3; real server-side model and Spark
+                      processing. Files cannot be changed.
+                    </p>
+                    <button
+                      className="primary"
+                      disabled={connecting || processing}
+                      onClick={() => confirmDraft(() => void connectSample())}
+                    >
+                      {connecting ? (
+                        <LoaderCircle className="spin" />
+                      ) : (
+                        <Database />
+                      )}
+                      {connecting ? "Connecting…" : "Use sample bucket"}
+                    </button>
+                    <small>Or connect your own Amazon S3 bucket below.</small>
+                  </div>
+                )}
                 {connections.length > 0 && (
                   <div className="saved-connections">
                     <label htmlFor="saved-connection">Saved connections</label>
@@ -924,7 +1009,10 @@ export default function App() {
                         </option>
                         {connections.map((item) => (
                           <option key={item.id} value={item.id}>
-                            {item.bucket} · {item.region}
+                            {item.bucket} ·{" "}
+                            {item.source_type === "sample"
+                              ? "Simulated S3"
+                              : item.region}
                           </option>
                         ))}
                       </select>
@@ -1163,6 +1251,11 @@ export default function App() {
                             <FileSpreadsheet />
                             {file.key}
                           </span>
+                          {file.description && (
+                            <small className="sample-description">
+                              {file.description}
+                            </small>
+                          )}
                         </td>
                         <td>{formatBytes(file.size)}</td>
                         <td>{dateLabel(file.modified)}</td>
@@ -1966,7 +2059,10 @@ export default function App() {
           {connection ? (
             <>
               <span className="status-dot" />
-              Connected to {connection.bucket}
+              {connection.source_type === "sample"
+                ? "Simulated S3 · "
+                : "Connected to "}
+              {connection.bucket}
             </>
           ) : (
             "No active connection"
@@ -2049,6 +2145,14 @@ export default function App() {
                 worksheet, choose columns and describe a transformation. Review
                 the configuration before running the job.
               </p>
+              {boot?.sample_bucket_enabled && (
+                <p className="muted">
+                  The optional sample bucket uses synthetic, read-only files
+                  without AWS credentials. It is not Amazon S3 and does not
+                  prove real S3 access. All processing jobs still run on the
+                  server.
+                </p>
+              )}
               <h3>Processing service status</h3>
               <div className="service-list">
                 {["database", "queue", "worker", "spark", "llm_configured"].map(

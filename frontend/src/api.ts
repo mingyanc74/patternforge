@@ -3,12 +3,14 @@ export type Connection = {
   bucket: string;
   region: string;
   expires_at: string;
+  source_type?: "amazon_s3" | "sample";
 };
 export type SourceFile = {
   key: string;
   size: number;
   modified: string;
   supported: boolean;
+  description?: string;
 };
 export type Column = { name: string; type: string };
 export type Operation = "regex_replace" | "regex_extract" | "normalize";
@@ -19,6 +21,7 @@ export type Job = {
   connection_id: string;
   bucket?: string;
   region?: string;
+  source_type?: "amazon_s3" | "sample";
   operation?: Operation;
   sheet?: string;
   status: "QUEUED" | "RUNNING" | "SUCCESS" | "FAILED" | "CANCELLED";
@@ -71,6 +74,7 @@ export type ResultPage = {
 export type Bootstrap = {
   csrf_token: string;
   llm_configured: boolean;
+  sample_bucket_enabled?: boolean;
   limits: {
     preview_rows: number;
     max_page_rows: number;
@@ -137,6 +141,11 @@ export const api = {
   health: () =>
     request<{ status: string; services: Record<string, boolean> }>("/health"),
   connections: () => request<{ connections: Connection[] }>("/s3/connections"),
+  connectSample: () =>
+    request<Connection>("/s3/sample-connection", {
+      method: "POST",
+      body: "{}",
+    }),
   connect: (body: Record<string, string>) =>
     request<Connection>("/s3/connections", {
       method: "POST",

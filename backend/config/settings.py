@@ -111,6 +111,7 @@ SPARK_EXECUTOR_MEMORY = os.getenv("SPARK_EXECUTOR_MEMORY", "1g")
 SPARK_PARTITIONS = int(os.getenv("SPARK_PARTITIONS", "8"))
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL", "")
 S3_ALLOW_HTTP = os.getenv("S3_ALLOW_HTTP", "0") == "1"
+SAMPLE_BUCKET_ENABLED = os.getenv("SAMPLE_BUCKET_ENABLED", "0") == "1"
 MAX_FILE_BYTES = int(os.getenv("MAX_FILE_BYTES", str(2 * 1024**3)))
 MAX_EXCEL_BYTES = int(os.getenv("MAX_EXCEL_BYTES", str(100 * 1024**2)))
 MAX_EXCEL_ROWS = int(os.getenv("MAX_EXCEL_ROWS", "1048576"))

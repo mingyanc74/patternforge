@@ -5,6 +5,7 @@ urlpatterns = [
     path("api/bootstrap", views.Bootstrap.as_view()),
     path("api/health", views.Health.as_view()),
     path("api/s3/connections", views.Connections.as_view()),
+    path("api/s3/sample-connection", views.SampleConnection.as_view()),
     path("api/s3/connections/<uuid:connection_id>", views.Disconnect.as_view()),
     path("api/s3/connections/<uuid:connection_id>/files", views.Files.as_view()),
     path("api/files/inspect", views.Inspect.as_view()),

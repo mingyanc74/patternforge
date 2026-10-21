@@ -207,6 +207,9 @@ export function JobsHistory({
                           </button>
                           <div className="history-meta" title={job.id}>
                             {job.id.slice(0, 8)}
+                            {job.source_type === "sample"
+                              ? " · Simulated S3"
+                              : ""}
                             {job.sheet ? ` · ${job.sheet}` : ""}
                           </div>
                         </td>

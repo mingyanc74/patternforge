@@ -10,6 +10,10 @@ from core.security import decrypt_credentials
 
 
 def client_for(connection=None, credentials=None, region=None):
+    if connection is not None and connection.source_type == "sample":
+        from core.sample_bucket import SampleBucket
+
+        return SampleBucket()
     credentials = credentials or decrypt_credentials(connection.ciphertext)
     endpoint = settings.S3_ENDPOINT_URL or None
     if endpoint and endpoint.startswith("http:") and not settings.S3_ALLOW_HTTP:

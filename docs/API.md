@@ -8,6 +8,7 @@ All endpoints are relative to `/api`. Call `GET /bootstrap` first; retain its se
 | GET | `/health` | 200: dependency flags; `ready` or `setup_required` |
 | GET | `/s3/connections` | 200: active session connections, no credentials |
 | POST | `/s3/connections` | 201: connection id, bucket, region, expiry |
+| POST | `/s3/sample-connection` | 201 (or 200 reused): session-owned simulated bucket, no credentials; empty JSON body; requires SAMPLE_BUCKET_ENABLED=1 |
 | DELETE | `/s3/connections/{id}` | 204: disconnected; existing running tasks converge |
 | GET | `/s3/connections/{id}/files?prefix=...&cursor=...` | 200: up to 100 objects and `next_cursor` |
 | POST | `/files/inspect` | 202: inspection Job and status URL |
@@ -18,6 +19,10 @@ All endpoints are relative to `/api`. Call `GET /bootstrap` first; retain its se
 | GET | `/jobs/{id}/results?limit=100&cursor=...` | 200: bounded result page |
 
 Connection request:
+
+Connections and jobs include `source_type=amazon_s3|sample`. Bootstrap includes `sample_bucket_enabled`.
+The optional sample route never accepts a bucket, credentials, endpoint or path. It uses synthetic,
+immutable files, not Amazon S3. Existing real S3 requests and credentials are unchanged.
 
 ```json
 {"access_key":"user-supplied","secret_key":"user-supplied","session_token":"optional","bucket":"your-bucket","region":"us-east-1"}
