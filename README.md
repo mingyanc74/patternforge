@@ -21,7 +21,7 @@ A private, natural-language workspace for transforming CSV and Excel data from *
 
 The repository contains real provider integrations. It does not invent model output when a model key is missing.
 
-Current free-only cloud choice: **Azure for Students**, without a payment method or paid upgrade. The student account is activated, but no VM/public deployment has been created. See [Azure capacity, credit and review-window plan](docs/AZURE_STUDENT_zh.md). Student credit is finite, not a permanently free server.
+Current free-only cloud choice: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Clearflow](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). External HTTPS/session checks passed 25 checks, genuine model semantics passed 10/10 bounded cases, and a synthetic 10,000-row Spark check used two executors and eight partitions. See [actual Azure acceptance and remaining gaps](docs/AZURE_ACCEPTANCE_zh.md). Real AWS S3 and the completed-job demo video are still pending. Student credit is finite, not a permanently free server.
 
 Custom identifiers need their format in the instruction (for example, a prefix plus digits), because private data rows are never sent to the model. Refused plans stop before Spark and are not cached. The provider uses operation-specific instructions and public few-shot examples; actual uncached requests still invoke the genuine model, never a built-in prompt-to-regex fallback.
 
@@ -210,7 +210,7 @@ Upload only to a bucket you intentionally choose, then process it through the no
 
 ## Production deployment
 
-Selected delivery mode: **independent cloud host, free resources only**. No laptop tunnel or static-only deployment is substituted. Follow the [independent-cloud checklist](docs/CLOUD_DEPLOY_zh.md), including the read-only preflight and real-service acceptance. A cloud account and available free capacity are still required; none is provisioned by this repository.
+Selected delivery mode: **independent cloud host, free resources only**. No laptop tunnel or static-only deployment is substituted. The complete stack is deployed on the user-approved Azure student-credit VM; the repository does not automatically provision additional cloud resources. Follow the [independent-cloud checklist](docs/CLOUD_DEPLOY_zh.md) for reproducible deployment and remaining real-S3 acceptance.
 
 For the internal free CPU model on that host, set the real DNS hostname in the private environment file, then run:
 
@@ -230,7 +230,8 @@ Caddy terminates HTTPS; secure cookies, trusted origins and HTTPS redirects are 
 
 ## Demo video and public URL
 
-**Public URL:** not provisioned in this repository.  
+**Public URL:** https://clearflow-patternforge.australiaeast.cloudapp.azure.com/ — external HTTPS and processing service health verified on 2026-10-21. Real S3 job acceptance is pending.
+
 **Demo video:** not recorded yet. Use the exact recording checklist in [SUBMISSION.md](docs/SUBMISSION.md), then replace these lines with the verified URL and an embedded video link/player. A UI-only recording does not meet the required real S3 plus completed asynchronous job demonstration.
 
 ## Troubleshooting

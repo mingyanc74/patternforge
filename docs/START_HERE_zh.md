@@ -1,5 +1,7 @@
 # 在桌面和 VS Code 中运行
 
+直接测试已部署的 [Clearflow](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/) 无需安装开发软件。它连接真实服务而不是交互原型；处理自己的文件仍需要有权访问的真实 S3 Bucket 和只读凭据。见 [实际验收与剩余工作](AZURE_ACCEPTANCE_zh.md)。
+
 ## 推荐：运行完整系统
 
 1. 打开桌面的 `patternforge` 文件夹。

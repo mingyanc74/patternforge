@@ -2,7 +2,7 @@
 
 已选定：完整应用在独立云服务器运行，不使用电脑托管、临时隧道、静态前端或 GitHub Actions 长驻进程替代服务器。不会代开付费套餐，也不保证免费主机一定有库存。
 
-当前选择 Azure for Students：用户已激活 US$100 学生额度，不需要输入支付方式。详见 [Azure 部署与额度规划](AZURE_STUDENT_zh.md)。这里的零现金支出指不绑卡、不升级、只用学生额度，不代表虚拟机没有计量费用或可以无限期运行。服务器仍未创建。
+当前选择 Azure for Students：用户已激活 US$100 学生额度，不需要输入支付方式，完整应用已在该服务器运行。详见 [实际验收与剩余工作](AZURE_ACCEPTANCE_zh.md)及 [Azure 部署与额度规划](AZURE_STUDENT_zh.md)。这里的零现金支出指不绑卡、不升级、只用学生额度，不代表虚拟机没有计量费用或可以无限期运行。
 
 ## 模型不需要付费 API
 
@@ -26,7 +26,7 @@ Java 镜像路径已改为识别 amd64/arm64；所固定 llama.cpp 镜像包含�
 
 ## 部署与最终提交
 
-按 [独立云部署清单](CLOUD_DEPLOY_zh.md) 操作。服务器准备好后才下载模型、启动容器、配置域名和 HTTPS。项目不会自动创建云资源，也没有现成公网地址。
+按 [独立云部署清单](CLOUD_DEPLOY_zh.md) 操作可复现部署。目前 [正式网址](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/)已运行全部容器并通过 HTTPS 检查；代码不会自动创建额外云资源。真实 S3 与视频仍未完成。
 
 需要一个指向云主机的真实 DNS 主机名。可以使用你已持有的域名或自行获得的免费 DNS 主机名；当前 Caddy 配置不能把裸 IP 自动变成可信 HTTPS 地址。
 

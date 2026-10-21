@@ -3,6 +3,7 @@
 - Keep `.env`, databases, result files and runtime environments out of Git. Bootstrap generates independent secrets. Never use test settings in deployment.
 - AWS credentials are encrypted at rest with a separate Fernet key. Losing the key makes saved payloads unusable; store and back it up securely outside the repository.
 - S3 credentials are entered over HTTPS in public deployments. Session cookies are HTTP-only and secure in the production overlay. Anonymous sessions receive CSRF validation for state changes as well as authenticated sessions.
+- Nginx emits CSP, framing and cache headers at server scope so location-level cache rules do not suppress security headers. Duplicate upstream security/cache headers are hidden. The API independently denies framing. Caddy owns the public HSTS policy; Django's `security.W004` remains an explicitly reviewed edge-termination warning, not a claim that public HSTS is absent. Browser preload registration is not enabled.
 - Resource lookup always includes the session owner. UUIDs alone do not authorize access. File/result cursors are signed and scoped to their owner and version.
 - Source access is read-only. Output uses platform-managed storage. No user S3 object is overwritten, deleted or uploaded by the processing pipeline.
 - Celery arguments contain IDs, not credentials. Attempt specs contain ciphertext, are mode-restricted and are deleted after execution. The decryption key is not sent to model services.

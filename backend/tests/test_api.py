@@ -11,6 +11,13 @@ from rest_framework.test import APIClient
 pytestmark = pytest.mark.django_db
 
 
+def test_api_denies_framing_and_content_type_sniffing(client):
+    response = client.get("/api/bootstrap")
+    assert response.status_code == 200
+    assert response["X-Frame-Options"] == "DENY"
+    assert response["X-Content-Type-Options"] == "nosniff"
+
+
 def inspect_job(client, saved_connection, bucket):
     response = client.post(
         "/api/files/inspect",

@@ -38,7 +38,7 @@ The initial backlog's 3-million-row, 10-minute and 2-second response targets are
 
 - Real AWS credentials and a test bucket: supplied privately in the application when available.
 - Genuine model: free Qwen3 CPU model passed the expanded 10/10 semantic checks both natively and in the [complete container verification](https://github.com/mingyanc74/patternforge/actions/runs/39429271689). That run passed the full task pipeline with synthetic S3, not real AWS or a public deployment. An external API key is optional, not required by the free-model overlay.
-- Independent Docker-capable public host and DNS hostname: Azure student account is activated, but the VM is not yet provisioned. Capacity, final configuration and credit consumption need confirmation; see AZURE_STUDENT_zh.md. Laptop tunnels are not the selected delivery mode.
+- Independent Docker-capable public host and DNS hostname: complete stack is running on the user-approved Azure student-credit VM. [External HTTPS/session, genuine-model and synthetic Spark checks passed](AZURE_ACCEPTANCE_zh.md). This is independent hosting, not a laptop tunnel. Student credits remain finite; real AWS job acceptance is not covered by these checks.
 - Actual end-to-end recording: produced after the real-service run.
 
 Source, tests and reproducible fixture integration are useful evidence; they do not erase these remaining assessment requirements.
