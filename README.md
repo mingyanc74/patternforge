@@ -22,6 +22,8 @@ A private, natural-language workspace for transforming CSV and Excel data from *
 
 The repository contains real provider integrations. It does not invent model output when a model key is missing.
 
+The user-approved optional sample bucket is now live at the public URL below: **44 public end-to-end checks passed** using synthetic data and the genuine model/queue/distributed Spark stack, plus 25 HTTPS/session checks. A browser-submitted 1,000-row job also completed with 800 expected email replacements. No AWS account is needed for this explicitly simulated mode. [Acceptance evidence and limitations](reports/SAMPLE_ACCEPTANCE.md) · [How to test](docs/SAMPLE_BUCKET_zh.md). This does not complete the original real-Amazon-S3 requirement.
+
 Current free-only cloud choice: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Clearflow](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). External HTTPS/session checks passed 25 checks, genuine model semantics passed 10/10 bounded cases, and a synthetic 10,000-row Spark check used two executors and eight partitions. See [actual Azure acceptance and remaining gaps](docs/AZURE_ACCEPTANCE_zh.md). Real AWS S3 and the completed-job demo video are still pending. Student credit is finite, not a permanently free server.
 
 Custom identifiers need their format in the instruction (for example, a prefix plus digits), because private data rows are never sent to the model. Refused plans stop before Spark and are not cached. The provider uses operation-specific instructions and public few-shot examples; actual uncached requests still invoke the genuine model, never a built-in prompt-to-regex fallback.

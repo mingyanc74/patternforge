@@ -1,5 +1,9 @@
 # 模拟 S3 测试桶
 
+已上线：https://clearflow-patternforge.australiaeast.cloudapp.azure.com/
+
+正式环境 44 项完整功能验收与 25 项 HTTPS/会话检查通过；另有浏览器实际提交并查看成功结果。[验收记录](../reports/SAMPLE_ACCEPTANCE.md)。
+
 用户在 2026-10-21 确认使用模拟桶完成无 AWS 账号的功能测试。这不是老师或评审已豁免 PDF 中真实 S3 要求的证明。
 
 ## 网页测试
