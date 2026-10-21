@@ -378,8 +378,9 @@ export default function App() {
       else newJob();
       return;
     }
-    go(schema.length ? "editor" : connection ? "files" : "connection");
-    if (connection && !schema.length && !files.length)
+    const connected = connection && new Date(connection.expires_at).getTime() > Date.now();
+    go(schema.length ? "editor" : connected ? "files" : "connection");
+    if (connection && connected && !schema.length && !files.length)
       void loadFiles(connection, prefix);
   }
   function resetInspection() {
@@ -2245,7 +2246,9 @@ export default function App() {
           {connection ? (
             <>
               <span className="status-dot" />
-              {connection.source_type === "sample"
+              {new Date(connection.expires_at).getTime() <= Date.now()
+                ? "Imported dataset · "
+                : connection.source_type === "sample"
                 ? "Simulated S3 · "
                 : "Connected to "}
               {connection.bucket}

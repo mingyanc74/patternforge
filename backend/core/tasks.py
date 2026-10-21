@@ -187,7 +187,11 @@ def run_spark(job, lease, work):
 @shared_task(name="core.tasks.process_job", acks_late=True, reject_on_worker_lost=True)
 def process_job(job_id):
     with transaction.atomic():
-        job = Job.objects.select_for_update().select_related("connection", "input_dataset").get(id=job_id)
+        job = (
+            Job.objects.select_for_update(of=("self",))
+            .select_related("connection", "input_dataset")
+            .get(id=job_id)
+        )
         if job.status != Job.Status.QUEUED:
             return
         if job.cancel_requested_at:
