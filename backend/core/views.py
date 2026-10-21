@@ -7,12 +7,13 @@ from urllib.parse import urlparse
 
 import redis
 from django.conf import settings
+from django.contrib.auth.hashers import check_password
 from django.contrib.sessions.models import Session
 from django.core import signing
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
 from django.http import HttpResponse
-from django.middleware.csrf import get_token
+from django.middleware.csrf import get_token, rotate_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from prometheus_client import CollectorRegistry, Gauge, generate_latest
@@ -20,11 +21,13 @@ from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.access import AccessThrottle, access_allowed, gate_version
 from core.errors import AppError
 from core.models import Job, Outbox, S3Connection
 from core.sample_bucket import CATALOG
 from core.security import encrypt_credentials
 from core.serializers import ConnectionInput, FileInput, JobInput
+from core.services.datasets import available, snapshot_path
 from core.services.results import read_page
 from core.services.s3 import call_s3, client_for, fingerprint
 
@@ -68,6 +71,9 @@ def serialize_job(job, full=True):
         "finished_at": job.finished_at,
         "result_expires_at": job.result_expires_at,
         "result_available": bool(job.manifest),
+        "dataset_available": available(job),
+        "dataset_expires_at": job.dataset_expires_at,
+        "input_dataset_id": str(job.input_dataset_id) if job.input_dataset_id else None,
         "error": {"code": job.error_code, "message": job.error_message} if job.error_code else None,
     }
     if full:
@@ -76,31 +82,87 @@ def serialize_job(job, full=True):
 
 
 class SessionView(APIView):
+    requires_access = True
+
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
         # DRF's default only checks CSRF for authenticated accounts; anonymous owner sessions also need it.
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
             SessionAuthentication().enforce_csrf(request)
+        if self.requires_access and not access_allowed(request):
+            raise AppError("ACCESS_REQUIRED", "Enter the website access password to continue.", 403)
 
 
 class Bootstrap(SessionView):
+    requires_access = False
+
     def get(self, request):
+        if not access_allowed(request):
+            return Response({"csrf_token": get_token(request), "access_required": True})
         owner(request)
         return Response(
             {
                 "csrf_token": get_token(request),
                 "llm_configured": bool(settings.LLM_API_KEY and settings.LLM_MODEL),
                 "sample_bucket_enabled": settings.SAMPLE_BUCKET_ENABLED,
+                "access_required": False,
+                "access_gate_enabled": bool(settings.DEMO_ACCESS_PASSWORD_HASH),
                 "limits": {
                     "preview_rows": 100,
                     "max_page_rows": 500,
                     "max_file_bytes": settings.MAX_FILE_BYTES,
                     "max_excel_bytes": settings.MAX_EXCEL_BYTES,
                     "result_ttl_hours": settings.RESULT_TTL_HOURS,
+                    "credential_ttl_hours": settings.CREDENTIAL_TTL_HOURS,
+                    "dataset_ttl_hours": settings.DATASET_TTL_HOURS,
                 },
                 "supported_operations": ["regex_replace", "regex_extract", "normalize"],
             }
         )
+
+
+class AccessLogin(SessionView):
+    requires_access = False
+    throttle_classes = [AccessThrottle]
+
+    def post(self, request):
+        password = request.data.get("password", "")
+        if settings.DEMO_ACCESS_PASSWORD_HASH and (
+            not isinstance(password, str)
+            or len(password) > 256
+            or not check_password(password, settings.DEMO_ACCESS_PASSWORD_HASH)
+        ):
+            raise AppError("ACCESS_DENIED", "The website access password is incorrect.", 403)
+        request.session.cycle_key()
+        request.session["demo_access"] = gate_version()
+        rotate_token(request)
+        return Response({"csrf_token": get_token(request), "access_required": False})
+
+
+class AccessLogout(SessionView):
+    requires_access = False
+
+    def post(self, request):
+        request.session.pop("demo_access", None)
+        request.session.cycle_key()
+        rotate_token(request)
+        return Response({"csrf_token": get_token(request)})
+
+
+class Datasets(SessionView):
+    def get(self, request):
+        items = (
+            Job.objects.filter(
+                owner=owner(request),
+                kind="inspect",
+                status=Job.Status.SUCCESS,
+                dataset_expires_at__gt=timezone.now(),
+            )
+            .exclude(dataset_path="")
+            .select_related("connection")
+            .order_by("-created_at")
+        )
+        return Response({"datasets": [serialize_job(item) for item in items[:50]]})
 
 
 class Health(APIView):
@@ -311,7 +373,25 @@ class Files(SessionView):
 
 def create_job(request, fields, kind):
     identity = owner(request)
-    item = live_connection(request, fields["connection_id"])
+    dataset = None
+    if kind == "transform":
+        candidate = get_object_or_404(
+            Job,
+            id=fields["inspection_id"],
+            owner=identity,
+            kind="inspect",
+            status=Job.Status.SUCCESS,
+            connection_id=fields["connection_id"],
+            source_key=fields["source_key"],
+        )
+        if candidate.dataset_path:
+            snapshot_path(candidate)
+            dataset = candidate
+            item = candidate.connection
+        else:
+            item = live_connection(request, fields["connection_id"])
+    else:
+        item = live_connection(request, fields["connection_id"])
     config = {
         key: value
         for key, value in fields.items()
@@ -388,6 +468,7 @@ def create_job(request, fields, kind):
                 kind=kind,
                 config=config,
                 source_fingerprint=source_info,
+                input_dataset=dataset,
                 idempotency_key=idem,
                 request_hash=request_hash,
             )

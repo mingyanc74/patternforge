@@ -5,6 +5,7 @@ import App from "../src/App";
 import "../src/styles.css";
 import type { Job } from "../src/api";
 const now = Date.now();
+const expiredConnection = new URLSearchParams(location.search).get("expired") === "1";
 const connection = {id:"10000000-0000-4000-8000-000000000001",bucket:"clearflow-ui-fixture",region:"ap-southeast-2",expires_at:new Date(now+86400000).toISOString()};
 const columns = ["ID","Name","Email","Description"].map(name => ({name,type:"string"}));
 const rows = Array.from({length:12},(_,i) => ({ID:String(i+1).padStart(3,"0"),Name:["Alice Chen","John Doe","Jane Smith","Sam Wilson"][i%4],Email:"user"+i+"@example.com",Description:"Order ORD-"+(1000+i)}));
@@ -21,15 +22,26 @@ const jobs:Job[] = Array.from({length:7},(_,i) => {
     plan:{operation,pattern:operation==="normalize" ? null : "email-pattern-ui-fixture",steps:operation==="normalize" ? ["trim","lowercase"] : [],explanation:"Fixture rule for UI verification only."},
     error:status==="FAILED" ? {code:"RULE_REJECTED",message:"The generated rule could not be used safely."} : null};
 });
+// Additive dataset-lifetime scenario. Keep the original jobs/inspection stores.
+inspection.dataset_available = true;
+inspection.dataset_expires_at = new Date(now+86400000).toISOString();
+inspection.bucket = connection.bucket;
+inspection.region = connection.region;
+inspection.source_type = "amazon_s3";
+inspection.config = {delimiter:",",encoding:"UTF-8",sheet:""};
+if(expiredConnection) connection.expires_at = new Date(now-1000).toISOString();
 const realFetch = window.fetch.bind(window);
 window.fetch = async (input,init) => {
   const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url,location.origin);
   if (!url.pathname.startsWith("/api/")) return realFetch(input,init);
   const path=url.pathname.slice(4),body=init?.body ? JSON.parse(String(init.body)) : {};
   let output:unknown={},status=200;
+  if(expiredConnection && ((path.includes("/files") && path.startsWith("/s3/")) || path==="/files/inspect"))
+    return new Response(JSON.stringify({error:{code:"CONNECTION_EXPIRED",message:"Fixture connection expired. Imported datasets are still available."}}),{status:410,headers:{"Content-Type":"application/json"}});
   if(path==="/bootstrap") output={csrf_token:"fixture-only",llm_configured:true,limits:{preview_rows:100,max_page_rows:500,max_file_bytes:2147483648,max_excel_bytes:104857600,result_ttl_hours:24}};
+  else if(path==="/datasets") output={datasets:[inspection]};
   else if(path==="/health") output={status:"ready",services:{database:true,queue:true,worker:true,spark:true,llm_configured:true}};
-  else if(path==="/s3/connections") output=init?.method==="POST" ? {...connection,bucket:body.bucket,region:body.region} : {connections:[connection]};
+  else if(path==="/s3/connections") output=init?.method==="POST" ? {...connection,bucket:body.bucket,region:body.region} : {connections:expiredConnection ? [] : [connection]};
   else if(path.includes("/files") && path.startsWith("/s3/")) output={files:[{key:"customers_october.csv",size:2048,modified:new Date(now).toISOString(),supported:true},{key:"reports/orders_2026.xlsx",size:4096,modified:new Date(now).toISOString(),supported:true},{key:"readme.txt",size:120,modified:new Date(now).toISOString(),supported:false}],next_cursor:null};
   else if(path==="/files/inspect") { Object.assign(inspection,{source_key:body.source_key,config:body,metadata:body.source_key.endsWith(".xlsx") && !body.sheet ? {sheets:["Customers","Orders"],requires_sheet:true} : {columns,preview:rows,sheet:body.sheet}}); output=inspection; status=202; }
   else if(path==="/jobs" && init?.method==="POST") {

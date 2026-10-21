@@ -19,7 +19,7 @@ class RedactingFilter(logging.Filter):
         text = record.getMessage()
         text = re.sub(
             r"(?i)(secret[_ .-]?(?:access[_ .-]?)?key|access[_ .-]?key|session[_ .-]?token|"
-            r"authorization|api[_ .-]?key)(\s*[:=]\s*)[^\s,;}]+",
+            r"authorization|password|api[_ .-]?key)(\s*[:=]\s*)[^\s,;}]+",
             r"\1\2[REDACTED]",
             text,
         )

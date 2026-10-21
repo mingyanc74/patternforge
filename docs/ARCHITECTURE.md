@@ -18,9 +18,9 @@ Terminal publication is protected by a database row lock and current lease. Canc
 
 ## Credential isolation
 
-Each connection stores a Fernet-encrypted JSON credential payload. Encryption keys come from private environment configuration. Queue messages contain Job IDs only. Each Spark application receives an attempt specification with encrypted credentials; it decrypts inside its isolated driver. Spark redaction is configured before credentials are introduced. Driver output is suppressed and failures expose safe error categories, not raw data-bearing Spark stack traces.
+Each connection stores a Fernet-encrypted JSON credential payload. Encryption keys come from private environment configuration. Queue messages contain Job IDs only. New inspections download a bounded, fingerprint-checked source snapshot in Celery, then Spark parses it without credentials. Successful imports publish a session-owned snapshot with a separate 24-hour lifetime. Subsequent transformations reference that snapshot. The legacy S3A path retains isolated driver decryption for older inspections. Driver output is suppressed and failures expose safe categories.
 
-Credentials cannot be used to start a new Job after expiry/disconnect. Active jobs prevent credential deletion until they converge; runtime limits prevent indefinite retention. A maintenance pass clears expired/disconnected inactive payloads.
+Connections default to one hour. Expiry/disconnect blocks new imports. Active imports prevent credential deletion until they converge; snapshot-only transformations do not retain credentials. Maintenance clears inactive credential payloads and expired snapshots, deferring snapshot deletion while referenced by an active transformation.
 
 ## LLM and regex boundaries
 

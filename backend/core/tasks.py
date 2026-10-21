@@ -17,6 +17,7 @@ from django.utils import timezone
 
 from core.errors import PipelineError
 from core.models import Job, Outbox, S3Connection
+from core.services.datasets import import_source, snapshot_path
 from core.services.plans import get_plan
 from core.services.results import build_manifest, contained_path
 from core.services.s3 import ensure_unchanged
@@ -73,14 +74,20 @@ def run_spark(job, lease, work):
         "source_key": job.source_key,
         "bucket": job.connection.bucket,
         "region": job.connection.region,
-        "encrypted_credentials": job.connection.ciphertext,
+        "encrypted_credentials": ""
+        if job.input_dataset_id or hasattr(job, "_snapshot_path")
+        else job.connection.ciphertext,
         "endpoint": settings.S3_ENDPOINT_URL,
         "partitions": settings.SPARK_PARTITIONS,
         "max_excel_bytes": settings.MAX_EXCEL_BYTES,
         "max_excel_rows": settings.MAX_EXCEL_ROWS,
         "max_cell_chars": settings.MAX_CELL_CHARS,
     }
-    if job.connection.source_type == "sample":
+    if job.input_dataset_id:
+        spec["local_source"] = str(snapshot_path(job.input_dataset))
+    elif hasattr(job, "_snapshot_path"):
+        spec["local_source"] = str(job._snapshot_path)
+    elif job.connection.source_type == "sample":
         from core.sample_bucket import object_bytes
 
         suffix = ".xlsx" if job.source_key.endswith(".xlsx") else ".csv"
@@ -180,7 +187,7 @@ def run_spark(job, lease, work):
 @shared_task(name="core.tasks.process_job", acks_late=True, reject_on_worker_lost=True)
 def process_job(job_id):
     with transaction.atomic():
-        job = Job.objects.select_for_update().select_related("connection").get(id=job_id)
+        job = Job.objects.select_for_update().select_related("connection", "input_dataset").get(id=job_id)
         if job.status != Job.Status.QUEUED:
             return
         if job.cancel_requested_at:
@@ -196,9 +203,24 @@ def process_job(job_id):
     work = settings.DATA_DIR / "jobs" / str(job.id) / str(lease)
     work.mkdir(parents=True, exist_ok=False)
     try:
-        if job.connection.disconnected_at or job.connection.expires_at <= timezone.now():
-            raise PipelineError("CONNECTION_EXPIRED", "Reconnect to S3 and submit a new job.")
-        ensure_unchanged(job.connection, job.source_key, job.source_fingerprint)
+        if job.input_dataset_id:
+            snapshot_path(job.input_dataset)
+        else:
+            if job.connection.disconnected_at or job.connection.expires_at <= timezone.now():
+                raise PipelineError("CONNECTION_EXPIRED", "Reconnect to S3 and submit a new job.")
+            ensure_unchanged(job.connection, job.source_key, job.source_fingerprint)
+        if job.kind == "inspect":
+
+            def checkpoint():
+                current = Job.objects.only("lease", "status", "cancel_requested_at").get(pk=job.id)
+                if current.cancel_requested_at:
+                    raise PipelineError("CANCELLED", "Cancelled by user.")
+                if current.lease != lease or current.status != Job.Status.RUNNING:
+                    raise PipelineError("LEASE_LOST", "The worker lease was replaced.")
+                scoped_update(job.id, lease, heartbeat_at=timezone.now(), stage="IMPORTING", progress=25)
+
+            job._snapshot_path, snapshot_sha = import_source(job, work, checkpoint)
+            ensure_unchanged(job.connection, job.source_key, job.source_fingerprint)
         if job.kind == "transform":
             scoped_update(job.id, lease, stage="GENERATING_PLAN", progress=20)
 
@@ -215,7 +237,8 @@ def process_job(job_id):
                 job.id, lease, plan=plan, metadata={"cache_hit": cached}, stage="VALIDATING_RULE", progress=30
             )
         metadata = run_spark(job, lease, work)
-        ensure_unchanged(job.connection, job.source_key, job.source_fingerprint)
+        if job.kind == "transform" and not job.input_dataset_id:
+            ensure_unchanged(job.connection, job.source_key, job.source_fingerprint)
         metadata["cache_hit"] = job.kind == "transform" and cached
         manifest = str(build_manifest(work, metadata, lease)) if job.kind == "transform" else ""
         with transaction.atomic():
@@ -228,6 +251,11 @@ def process_job(job_id):
                 final.status, final.stage, final.progress = Job.Status.SUCCESS, "COMPLETED", 100
                 final.metadata, final.manifest = metadata, manifest
                 final.result_expires_at = timezone.now() + timedelta(hours=settings.RESULT_TTL_HOURS)
+                if job.kind == "inspect" and not metadata.get("requires_sheet"):
+                    final.dataset_path = str(job._snapshot_path)
+                    final.dataset_expires_at = timezone.now() + timedelta(hours=settings.DATASET_TTL_HOURS)
+                    final.result_expires_at = final.dataset_expires_at
+                    final.metadata["import_sha256"] = snapshot_sha
             final.finished_at, final.error_code, final.error_message = timezone.now(), "", ""
             final.save()
     except Exception as exc:
@@ -261,8 +289,8 @@ def process_job(job_id):
             final.error_code, final.error_message = error.code, error.message
             final.save()
     finally:
-        current = Job.objects.only("manifest").get(id=job.id)
-        if not current.manifest or str(work) not in current.manifest:
+        current = Job.objects.only("manifest", "dataset_path").get(id=job.id)
+        if not any(str(work) in path for path in (current.manifest, current.dataset_path) if path):
             shutil.rmtree(contained_path(work), ignore_errors=True)
 
 
@@ -304,14 +332,28 @@ def maintenance():
                 Outbox.objects.update_or_create(job=job, defaults={"available_at": now, "sent_at": None})
             job.save()
     Outbox.objects.filter(job__status=Job.Status.QUEUED, sent_at__lt=stale).update(sent_at=None)
-    for job in Job.objects.filter(status__in=Job.TERMINAL, result_expires_at__lt=now).exclude(
-        metadata={"expired": True}
+    active_inputs = Job.objects.filter(
+        status__in=[Job.Status.QUEUED, Job.Status.RUNNING], input_dataset__isnull=False
+    ).values("input_dataset_id")
+    for dataset in (
+        Job.objects.filter(kind="inspect", dataset_expires_at__lte=now)
+        .exclude(dataset_path="")
+        .exclude(id__in=active_inputs)
+    ):
+        shutil.rmtree(contained_path(dataset.dataset_path).parent, ignore_errors=True)
+        Job.objects.filter(pk=dataset.id).update(dataset_path="", metadata={"expired": True})
+    for job in (
+        Job.objects.filter(status__in=Job.TERMINAL, result_expires_at__lt=now)
+        .exclude(kind="inspect", dataset_path__gt="")
+        .exclude(metadata={"expired": True})
     ):
         if job.manifest:
             folder = contained_path(job.manifest).parent
             shutil.rmtree(folder, ignore_errors=True)
         Job.objects.filter(id=job.id).update(manifest="", metadata={"expired": True})
-    active_connections = Job.objects.filter(status__in=[Job.Status.QUEUED, Job.Status.RUNNING])
+    active_connections = Job.objects.filter(
+        status__in=[Job.Status.QUEUED, Job.Status.RUNNING], input_dataset__isnull=True
+    )
     S3Connection.objects.filter(Q(expires_at__lt=now) | Q(disconnected_at__isnull=False)).exclude(
         id__in=active_connections.values("connection_id")
     ).exclude(ciphertext="").update(ciphertext="")
@@ -322,13 +364,13 @@ def cleanup_abandoned_attempts(now):
     """Reclaim crash leftovers after retention; never touch active jobs or a published live result."""
     old = Job.objects.filter(
         status__in=Job.TERMINAL, finished_at__lt=now - timedelta(hours=settings.TEMP_TTL_HOURS)
-    ).only("id", "manifest")
+    ).only("id", "manifest", "dataset_path")
     for job in old.iterator(chunk_size=100):
         root = contained_path(settings.DATA_DIR / "jobs" / str(job.id))
         expected = (settings.DATA_DIR / "jobs" / str(job.id)).absolute()
         if root != expected or not root.is_dir() or root.is_symlink():
             continue
-        published = contained_path(job.manifest).parent if job.manifest else None
+        published = {contained_path(path).parent for path in (job.manifest, job.dataset_path) if path}
         for child in root.iterdir():
             if not child.is_dir() or child.is_symlink():
                 continue
@@ -337,6 +379,6 @@ def cleanup_abandoned_attempts(now):
             except ValueError:
                 continue
             target = contained_path(child)
-            if target.parent != root or target == published:
+            if target.parent != root or target in published:
                 continue
             shutil.rmtree(target, ignore_errors=True)

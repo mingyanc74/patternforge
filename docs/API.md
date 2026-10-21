@@ -5,6 +5,9 @@ All endpoints are relative to `/api`. Call `GET /bootstrap` first; retain its se
 | Method | Path | Success |
 |---|---|---|
 | GET | `/bootstrap` | 200: CSRF token, model configuration flag, limits |
+| POST | `/access/unlock` | 200: validate website password, rotate session/CSRF; body `{"password":"..."}` |
+| POST | `/access/lock` | 200: lock the entrance, rotate session/CSRF; preserve workspace owner |
+| GET | `/datasets` | 200: up to 50 available imported datasets belonging to this browser |
 | GET | `/health` | 200: dependency flags; `ready` or `setup_required` |
 | GET | `/s3/connections` | 200: active session connections, no credentials |
 | POST | `/s3/connections` | 201: connection id, bucket, region, expiry |
@@ -19,6 +22,10 @@ All endpoints are relative to `/api`. Call `GET /bootstrap` first; retain its se
 | GET | `/jobs/{id}/results?limit=100&cursor=...` | 200: bounded result page |
 
 Connection request:
+
+If configured, the website gate returns only `csrf_token` and `access_required=true` from bootstrap until unlocked. Other workspace APIs return `ACCESS_REQUIRED` (403). Unlock attempts are limited to five per minute per client IP. Use the new CSRF token after unlock/lock. This is a shared entrance password, not a personal account or AWS credential.
+
+Connections default to one hour; imported datasets and results to 24 hours. Successful imports expose `dataset_available` and `dataset_expires_at`. Transformations expose `input_dataset_id` and can use a retained import after its connection expires/disconnects. New imports still require a live connection. Expired imports return `DATASET_EXPIRED`; import again using a valid connection. Older inspections without a snapshot retain the legacy live-connection requirement.
 
 Connections and jobs include `source_type=amazon_s3|sample`. Bootstrap includes `sample_bucket_enabled`.
 The optional sample route never accepts a bucket, credentials, endpoint or path. It uses synthetic,

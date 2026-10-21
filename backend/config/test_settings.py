@@ -10,3 +10,5 @@ from .settings import *  # noqa: E402,F403
 
 REST_FRAMEWORK = {**REST_FRAMEWORK, "DEFAULT_THROTTLE_CLASSES": []}  # noqa: F405
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+DEMO_ACCESS_PASSWORD_HASH = ""

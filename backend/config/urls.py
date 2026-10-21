@@ -4,6 +4,9 @@ from django.urls import path
 urlpatterns = [
     path("api/bootstrap", views.Bootstrap.as_view()),
     path("api/health", views.Health.as_view()),
+    path("api/access/unlock", views.AccessLogin.as_view()),
+    path("api/access/lock", views.AccessLogout.as_view()),
+    path("api/datasets", views.Datasets.as_view()),
     path("api/s3/connections", views.Connections.as_view()),
     path("api/s3/sample-connection", views.SampleConnection.as_view()),
     path("api/s3/connections/<uuid:connection_id>", views.Disconnect.as_view()),

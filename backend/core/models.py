@@ -37,6 +37,12 @@ class Job(models.Model):
     kind = models.CharField(max_length=16, default="transform")
     source_key = models.CharField(max_length=1024)
     source_fingerprint = models.JSONField(default=dict)
+    # A successful inspection can own an immutable imported source snapshot.
+    dataset_path = models.CharField(max_length=1024, blank=True)
+    dataset_expires_at = models.DateTimeField(null=True, blank=True)
+    input_dataset = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.PROTECT, related_name="transforms"
+    )
     config = models.JSONField(default=dict)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED, db_index=True)
     stage = models.CharField(max_length=64, default="QUEUED")

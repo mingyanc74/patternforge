@@ -49,8 +49,16 @@ import { DataTable } from "./components/DataTable";
 import { JobsHistory } from "./components/JobsHistory";
 import { Modal } from "./components/Modal";
 import { Status } from "./components/Status";
+import { Datasets } from "./components/Datasets";
 
-type Screen = "connection" | "files" | "editor" | "job" | "results" | "history";
+type Screen =
+  | "connection"
+  | "files"
+  | "editor"
+  | "job"
+  | "results"
+  | "history"
+  | "datasets";
 type Dialog = "help" | "review" | "cancel" | "disconnect" | "discard" | null;
 const stages = [
   "VALIDATING",
@@ -112,6 +120,8 @@ export default function App() {
     [initializing, setInitializing] = useState(true);
   const [connections, setConnections] = useState<Connection[]>([]),
     [connection, setConnection] = useState<Connection | null>(null);
+  const [accessPassword, setAccessPassword] = useState(""),
+    [unlocking, setUnlocking] = useState(false);
   const [credentials, setCredentials] = useState({
     access_key: "",
     secret_key: "",
@@ -166,15 +176,22 @@ export default function App() {
       : [];
   const dirty = !!(prompt || columns.length || replacement || newColumn);
   const processing = active(inspection) || active(job);
-  const report = useCallback(
-    (value: unknown) =>
-      setError(
-        value instanceof Error
-          ? value.message
-          : "Something went wrong. Please retry.",
-      ),
-    [],
-  );
+  const report = useCallback((value: unknown) => {
+    if (value instanceof RequestError && value.code === "ACCESS_REQUIRED") {
+      setBoot((old) => (old ? { ...old, access_required: true } : old));
+      setCredentials((old) => ({
+        ...old,
+        access_key: "",
+        secret_key: "",
+        session_token: "",
+      }));
+    }
+    setError(
+      value instanceof Error
+        ? value.message
+        : "Something went wrong. Please retry.",
+    );
+  }, []);
   const go = useCallback((next: Screen) => {
     setScreen(next);
     setError("");
@@ -255,6 +272,7 @@ export default function App() {
     try {
       const config = await api.bootstrap();
       setBoot(config);
+      if (config.access_required) return;
       const [saved, jobs, health] = await Promise.all([
         api.connections(),
         api.jobs({ kind: "transform", limit: 1 }),
@@ -345,10 +363,13 @@ export default function App() {
       setJob(null);
       setPage(null);
       window.history.replaceState(null, "", location.pathname);
-      if (connection) {
+      if (
+        connection &&
+        new Date(connection.expires_at).getTime() > Date.now()
+      ) {
         go("files");
         void loadFiles(connection, prefix);
-      } else go("connection");
+      } else go(inspection?.dataset_available ? "datasets" : "connection");
     });
   }
   function prepare() {
@@ -382,7 +403,33 @@ export default function App() {
     if (pendingReuse && pendingReuse.source_key !== file.key)
       setPendingReuse(null);
   }
-  function applyReuse(item: Job) {
+  function openDataset(item: Job) {
+    clearDraft();
+    setJob(null);
+    setPage(null);
+    setInspection(item);
+    setConnection(
+      connections.find((value) => value.id === item.connection_id) || {
+        id: item.connection_id,
+        bucket: item.bucket || "",
+        region: item.region || "",
+        source_type: item.source_type,
+        expires_at: item.created_at,
+      },
+    );
+    setSelected({
+      key: item.source_key,
+      size: 0,
+      supported: true,
+      modified: item.created_at,
+    });
+    setSheet(item.metadata?.sheet || "");
+    setDelimiter(String(item.config?.delimiter || ","));
+    setEncoding(String(item.config?.encoding || "UTF-8"));
+    window.history.replaceState(null, "", location.pathname);
+    go("editor");
+  }
+  async function applyReuse(item: Job) {
     const config = item.config || {};
     setOperation(
       (config.operation as Operation) || item.operation || "regex_replace",
@@ -401,6 +448,37 @@ export default function App() {
     setInspection(null);
     setSheets([]);
     setPendingReuse(item);
+    if (config.inspection_id) {
+      try {
+        const imported = await api.job(String(config.inspection_id));
+        if (imported.dataset_available) {
+          setInspection(imported);
+          setConnection(
+            connections.find(
+              (value) => value.id === imported.connection_id,
+            ) || {
+              id: imported.connection_id,
+              bucket: imported.bucket || "",
+              region: imported.region || "",
+              source_type: imported.source_type,
+              expires_at: imported.created_at,
+            },
+          );
+          setSelected({
+            key: imported.source_key,
+            size: 0,
+            supported: true,
+            modified: imported.created_at,
+          });
+          window.history.replaceState(null, "", location.pathname);
+          go("editor");
+          return;
+        }
+      } catch (value) {
+        report(value);
+        return;
+      }
+    }
     const linked = connections.find(
       (value) =>
         value.id === item.connection_id ||
@@ -651,6 +729,7 @@ export default function App() {
             ? job?.status === "SUCCESS"
             : true);
   const titles: Record<Screen, string> = {
+    datasets: "Imported datasets",
     history: "Jobs",
     connection: "Connect your data",
     files: "Select a file",
@@ -659,17 +738,19 @@ export default function App() {
     results: job && resultExpired(job) ? "Results expired" : "Results",
   };
   const description =
-    screen === "history"
-      ? "Review past jobs and reuse a configuration."
-      : screen === "connection"
-        ? "Choose the S3 bucket that contains your CSV or Excel file."
-        : screen === "files"
-          ? (connection?.source_type === "sample" ? "sample://" : "s3://") +
-            (connection?.bucket || "") +
-            " · CSV and Excel (.xlsx)"
-          : screen === "results"
-            ? job?.source_key
-            : "";
+    screen === "datasets"
+      ? "Use previously imported data without reconnecting to S3."
+      : screen === "history"
+        ? "Review past jobs and reuse a configuration."
+        : screen === "connection"
+          ? "Choose the S3 bucket that contains your CSV or Excel file."
+          : screen === "files"
+            ? (connection?.source_type === "sample" ? "sample://" : "s3://") +
+              (connection?.bucket || "") +
+              " · CSV and Excel (.xlsx)"
+            : screen === "results"
+              ? job?.source_key
+              : "";
   const changed = Object.values(job?.metadata?.changed_cells || {}).reduce(
     (sum, value) => sum + value,
     0,
@@ -682,6 +763,61 @@ export default function App() {
       !services.worker ||
       !services.spark ||
       !boot.llm_configured);
+  if (boot?.access_required)
+    return (
+      <main className="access-screen">
+        <form
+          className="panel access-panel"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            setUnlocking(true);
+            setError("");
+            try {
+              await api.unlock(accessPassword);
+              setAccessPassword("");
+              await initialize();
+            } catch (value) {
+              report(value);
+            } finally {
+              setAccessPassword("");
+              setUnlocking(false);
+            }
+          }}
+        >
+          <div className="panel-head">
+            <h1>Clearflow</h1>
+            <LockKeyhole />
+          </div>
+          <div className="panel-body">
+            <h2>Enter the website access password</h2>
+            <p className="muted">
+              This shared demo entrance is not a personal account or an AWS
+              login. Each browser has its own workspace.
+            </p>
+            <div className="field">
+              <label htmlFor="website-password">Website access password</label>
+              <input
+                id="website-password"
+                type="password"
+                required
+                maxLength={256}
+                autoComplete="current-password"
+                value={accessPassword}
+                onChange={(event) => setAccessPassword(event.target.value)}
+              />
+            </div>
+            {error && (
+              <p role="alert" className="danger-text">
+                {error}
+              </p>
+            )}
+            <button className="primary" disabled={unlocking}>
+              {unlocking ? "Checking…" : "Enter workspace"}
+            </button>
+          </div>
+        </form>
+      </main>
+    );
   return (
     <div className="clearflow-app">
       <header className="app-header">
@@ -698,6 +834,22 @@ export default function App() {
         <span className="header-divider" />
         <span className="header-label">Data preparation</span>
         <div className="header-actions">
+          {boot?.access_gate_enabled && (
+            <button
+              className="quiet"
+              onClick={() => {
+                void api
+                  .lock()
+                  .then(() => {
+                    setAccessPassword("");
+                    void initialize();
+                  })
+                  .catch(report);
+              }}
+            >
+              Lock workspace
+            </button>
+          )}
           <button
             className="icon-button"
             aria-label="Help"
@@ -716,12 +868,21 @@ export default function App() {
           <button
             className={
               "nav-item " +
-              (!["connection", "history"].includes(screen) ? "is-active" : "")
+              (!["connection", "history", "datasets"].includes(screen)
+                ? "is-active"
+                : "")
             }
             onClick={prepare}
           >
             <Table2 />
             <span>Prepare data</span>
+          </button>
+          <button
+            className={"nav-item " + (screen === "datasets" ? "is-active" : "")}
+            onClick={() => confirmDraft(() => go("datasets"))}
+          >
+            <FolderClosed />
+            <span>Imported datasets</span>
           </button>
           <button
             className={"nav-item " + (screen === "history" ? "is-active" : "")}
@@ -750,7 +911,9 @@ export default function App() {
         <button
           onClick={prepare}
           className={
-            screen !== "history" && screen !== "connection" ? "is-active" : ""
+            !["history", "connection", "datasets"].includes(screen)
+              ? "is-active"
+              : ""
           }
         >
           Prepare data
@@ -760,6 +923,12 @@ export default function App() {
           className={screen === "history" ? "is-active" : ""}
         >
           Jobs
+        </button>
+        <button
+          onClick={() => confirmDraft(() => go("datasets"))}
+          className={screen === "datasets" ? "is-active" : ""}
+        >
+          Datasets
         </button>
         <button
           onClick={() => go("connection")}
@@ -815,7 +984,7 @@ export default function App() {
             )
           ) : null}
         </div>
-        {screen !== "history" && (
+        {!["history", "datasets"].includes(screen) && (
           <nav className="steps" aria-label="Transformation steps">
             {(
               ["connection", "files", "editor", "job", "results"] as Screen[]
@@ -870,7 +1039,7 @@ export default function App() {
             </button>
           </div>
         )}
-        {screen !== "history" &&
+        {!["history", "datasets"].includes(screen) &&
           (screen === "job" || screen === "results"
             ? job?.source_type === "sample"
             : connection?.source_type === "sample") && (
@@ -935,6 +1104,12 @@ export default function App() {
                 : "Preview the source file before running the new job."}
             </span>
           </div>
+        )}
+        {screen === "datasets" && boot && (
+          <Datasets
+            onOpen={(item) => confirmDraft(() => openDataset(item))}
+            onError={setError}
+          />
         )}
         {screen === "history" && boot && (
           <JobsHistory
@@ -1048,6 +1223,13 @@ export default function App() {
                   onSubmit={(event) => void connect(event)}
                   autoComplete="off"
                 >
+                  <p className="inline-note">
+                    Connect bucket authorizes this workspace to list and import
+                    your S3 files; it does not log you into the website. New
+                    connections expire after{" "}
+                    {boot?.limits.credential_ttl_hours || 1} hour(s). Imported
+                    datasets are retained separately.
+                  </p>
                   <div className="field">
                     <label htmlFor="access-key">AWS access key ID</label>
                     <input
@@ -1181,7 +1363,11 @@ export default function App() {
                   rows are never sent to the language model.
                 </p>
               </div>
-              <p className="muted">Original files remain unchanged.</p>
+              <p className="muted">
+                Original files remain unchanged. Use Imported datasets after a
+                connection expires; retained imports remain usable for{" "}
+                {boot?.limits.dataset_ttl_hours || 24} hours.
+              </p>
             </aside>
           </div>
         )}
@@ -2186,10 +2372,11 @@ export default function App() {
               </p>
               <h3>Safety and retention</h3>
               <p>
-                Source files are read-only. Results and encrypted credentials
-                expire after {boot?.limits.result_ttl_hours || 24} hours. Jobs
-                belong to this browser session. Never include keys in a
-                recording.
+                Source files are read-only. Connections expire after{" "}
+                {boot?.limits.credential_ttl_hours || 1} hour(s); imported datasets
+                and results are retained separately for{" "}
+                {boot?.limits.dataset_ttl_hours || 24} hours. Jobs belong to this
+                browser session. Never include keys in a recording.
               </p>
             </>
           ) : dialog === "review" ? (
@@ -2242,8 +2429,9 @@ export default function App() {
             </p>
           ) : dialog === "disconnect" ? (
             <p>
-              Encrypted credentials will be removed. You will need to enter them
-              again for new jobs. Running jobs using this connection may fail.
+              New imports will require reconnecting. Credentials are removed
+              after any active import finishes. Available imported datasets and
+              snapshot-based processing remain usable until their own expiry.
             </p>
           ) : (
             <p>

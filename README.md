@@ -130,7 +130,7 @@ Replacement is literal: `$1` is inserted as `$1`, not interpreted as a capture g
 | Normalization | Ordered trim, collapse whitespace, lowercase, uppercase; arbitrary semantic rewriting is rejected |
 | Regex | Conservative Java/Python-compatible subset; no lookaround, backreferences, nested repetition, repeated alternatives, unbounded wildcard repeats or zero-length matches |
 | Pagination | Default 100, max 500 rows; JSON page bounded to approximately 2 MiB, so wide rows can yield fewer rows with a valid next cursor |
-| Retention | Credentials and results default to 24 hours; explicit disconnect prevents new jobs |
+| Retention | Connections default to 1 hour; imported datasets and results to 24 hours. Expiry/disconnect prevents new imports, not processing an available imported dataset |
 
 LLM plans are schema-validated; no generated Python, SQL, shell commands or arbitrary functions are evaluated. Only the prompt, chosen operation and necessary column names are sent to the model. Raw data rows and AWS credentials are never included in model requests.
 
@@ -145,7 +145,9 @@ flowchart LR
   Redis --> Worker[Celery orchestration worker]
   Worker --> LLM[Configured LLM service]
   Worker --> Driver[Isolated Spark driver per job]
-  Driver --> S3[User's S3 bucket]
+  Worker -->|read-only import| S3[User's S3 bucket]
+  Worker --> Snapshot[(Retained input snapshots)]
+  Snapshot --> Driver
   Driver --> Cluster[Spark master + two workers]
   Cluster --> Store[(Shared persistent Parquet storage)]
   API --> Store
@@ -157,7 +159,9 @@ flowchart LR
 - PostgreSQL is authoritative for job status; Redis Celery results are not the only durable job record.
 - The transactional outbox prevents accepted HTTP 202 jobs from being lost between database commit and broker publication. A dispatcher outside the task queue also resumes publication after Redis returns.
 - Each job has a lease and attempt-specific workspace. Duplicate deliveries cannot overwrite terminal states. Only a complete manifest becomes visible.
-- Each Spark application has an isolated credential context. Plaintext AWS keys are not passed in command-line arguments or Celery messages.
+- New imports use AWS credentials only in orchestration; subsequent Spark jobs read retained snapshots without AWS credentials. The legacy S3A path retains an isolated credential context. Plaintext keys are never passed in command-line arguments or Celery messages.
+
+Website access, browser ownership and S3 authorization are separate mechanisms. See [dataset retention and password access](docs/DATASETS_AND_ACCESS_zh.md).
 - The worker polls cancellation while its child runs. An independent driver lease guard also stops work after parent loss, cancellation, lease replacement or a hard deadline.
 - Parquet is split into bounded files and indexed by row-group metadata. The API reads the relevant batches through PyArrow rather than starting Spark for every page.
 - The provided deployment uses a named shared volume, appropriate for a single-host multi-container assessment. A multi-host deployment must replace it with a shared filesystem or object-store-aware result service; mounting unrelated local directories on different hosts is not supported.

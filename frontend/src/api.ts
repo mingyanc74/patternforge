@@ -23,6 +23,9 @@ export type Job = {
   region?: string;
   source_type?: "amazon_s3" | "sample";
   operation?: Operation;
+  dataset_available?: boolean;
+  dataset_expires_at?: string | null;
+  input_dataset_id?: string | null;
   sheet?: string;
   status: "QUEUED" | "RUNNING" | "SUCCESS" | "FAILED" | "CANCELLED";
   stage: string;
@@ -75,12 +78,16 @@ export type Bootstrap = {
   csrf_token: string;
   llm_configured: boolean;
   sample_bucket_enabled?: boolean;
+  access_required?: boolean;
+  access_gate_enabled?: boolean;
   limits: {
     preview_rows: number;
     max_page_rows: number;
     max_file_bytes: number;
     max_excel_bytes: number;
     result_ttl_hours: number;
+    credential_ttl_hours?: number;
+    dataset_ttl_hours?: number;
   };
 };
 
@@ -140,6 +147,21 @@ export const api = {
   },
   health: () =>
     request<{ status: string; services: Record<string, boolean> }>("/health"),
+  async unlock(password: string) {
+    const value = await request<{ csrf_token: string }>("/access/unlock", {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    });
+    csrf = value.csrf_token;
+  },
+  async lock() {
+    const value = await request<{ csrf_token: string }>("/access/lock", {
+      method: "POST",
+      body: "{}",
+    });
+    csrf = value.csrf_token;
+  },
+  datasets: () => request<{ datasets: Job[] }>("/datasets"),
   connections: () => request<{ connections: Connection[] }>("/s3/connections"),
   connectSample: () =>
     request<Connection>("/s3/sample-connection", {

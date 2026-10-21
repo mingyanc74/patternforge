@@ -1,3 +1,4 @@
+import base64
 import os
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -75,6 +76,8 @@ DATA_DIR = DATA_DIR.resolve()
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379/0")
 CACHE_URL = os.getenv("CACHE_URL", "redis://127.0.0.1:6379/2")
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": CACHE_URL}}
+DEMO_ACCESS_PASSWORD_HASH = base64.b64decode(os.getenv("DEMO_ACCESS_PASSWORD_HASH_B64", "")).decode()
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = os.getenv("RESULT_BACKEND_URL", "redis://127.0.0.1:6379/1")
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -119,7 +122,8 @@ MAX_CELL_CHARS = int(os.getenv("MAX_CELL_CHARS", "65536"))
 JOB_TIMEOUT_SECONDS = int(os.getenv("JOB_TIMEOUT_SECONDS", "1800"))
 RESULT_TTL_HOURS = int(os.getenv("RESULT_TTL_HOURS", "24"))
 TEMP_TTL_HOURS = int(os.getenv("TEMP_TTL_HOURS", "24"))
-CREDENTIAL_TTL_HOURS = int(os.getenv("CREDENTIAL_TTL_HOURS", "24"))
+CREDENTIAL_TTL_HOURS = int(os.getenv("CREDENTIAL_TTL_HOURS", "1"))
+DATASET_TTL_HOURS = int(os.getenv("DATASET_TTL_HOURS", "24"))
 MAX_ACTIVE_JOBS_PER_SESSION = int(os.getenv("MAX_ACTIVE_JOBS_PER_SESSION", "3"))
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],

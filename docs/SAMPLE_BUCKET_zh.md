@@ -8,7 +8,7 @@
 
 ## 网页测试
 
-打开正式网址，点击 `Try sample bucket`，或 Connections 页的 `Use sample bucket`。不需要用户名、密码或任何 AWS 密钥。模拟连接只属于当前浏览器会话，默认 24 小时过期，可以断开后重新连接。不要使用真实个人数据测试。
+打开正式网址，先输入管理员提供的网站访问密码（如已启用门禁），再点击 `Try sample bucket`，或 Connections 页的 `Use sample bucket`。模拟桶不需要 AWS 密钥。模拟连接只属于当前浏览器会话，默认 1 小时过期，可以断开后重新连接。已导入的数据集独立保留 24 小时，连接失效后仍可处理。不要使用真实个人数据测试。
 
 桶名 `clearflow-sample-bucket`，标识 `sample://`；这是应用内只读数据适配器，不是 Amazon S3，也不是公网 S3 协议服务器。没有公开存储端口，没有 AWS 写操作，没有假 AWS 密钥。
 

@@ -49,6 +49,7 @@ export function dateLabel(value: string) {
 export const stageLabels: Record<string, string> = {
   QUEUED: "Waiting for an available worker",
   VALIDATING: "Validating source and configuration",
+  IMPORTING: "Importing a private dataset snapshot",
   GENERATING_PLAN: "Turning your instruction into a rule",
   VALIDATING_RULE: "Checking rule safety",
   READING: "Reading your source data",

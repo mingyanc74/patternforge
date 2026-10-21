@@ -17,6 +17,7 @@ import httpx
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", required=True)
+    parser.add_argument("--password-file", type=Path)
     parser.add_argument("--report", type=Path, default=Path("reports/local/sample-e2e.json"))
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
@@ -40,6 +41,17 @@ def main():
             return response.json() if response.content else None
 
         boot = request("GET", "/bootstrap")
+        if boot.get("access_required"):
+            if not args.password_file:
+                parser.error("The website gate requires --password-file.")
+            secret = json.loads(args.password_file.read_text(encoding="utf-8"))["website_access_password"]
+            unlocked = client.post(
+                "/api/access/unlock",
+                json={"password": secret},
+                headers={"Origin": base, "X-CSRFToken": boot["csrf_token"]},
+            )
+            unlocked.raise_for_status()
+            boot = request("GET", "/bootstrap")
         verify("Sample source explicitly enabled", boot["sample_bucket_enabled"] is True)
         verify("Server processing ready", request("GET", "/health")["status"] == "ready")
         verify(
@@ -62,7 +74,14 @@ def main():
             "Six documented sample files", len(files) == 6 and all(item.get("description") for item in files)
         )
         with httpx.Client(base_url=base, timeout=20) as other:
-            other.get("/api/bootstrap")
+            otherboot = other.get("/api/bootstrap").json()
+            if otherboot.get("access_required"):
+                other.post(
+                    "/api/access/unlock",
+                    json={"password": secret},
+                    headers={"Origin": base, "X-CSRFToken": otherboot["csrf_token"]},
+                ).raise_for_status()
+                other.get("/api/bootstrap")
             verify(
                 "Other visitor cannot read connection",
                 other.get(f"/api/s3/connections/{connection['id']}/files").status_code == 404,

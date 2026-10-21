@@ -13,6 +13,7 @@ import httpx
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", required=True)
+    parser.add_argument("--password-file", type=Path)
     parser.add_argument("--report", type=Path, default=Path("reports/local/cloud-http.json"))
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
@@ -53,6 +54,18 @@ def main():
         verify("Processing health ready", health.json()["status"] == "ready")
         bootstrap = client.get("/api/bootstrap")
         verify("API is never publicly cached", "no-store" in bootstrap.headers.get("cache-control", ""))
+        if bootstrap.json().get("access_required"):
+            verify("Gate blocks workspace API", client.get("/api/jobs").status_code == 403)
+            if not args.password_file:
+                parser.error("This deployment requires --password-file; never put the password in arguments.")
+            secret = json.loads(args.password_file.read_text(encoding="utf-8"))["website_access_password"]
+            unlocked = client.post(
+                "/api/access/unlock",
+                json={"password": secret},
+                headers={"Origin": base, "X-CSRFToken": bootstrap.json()["csrf_token"]},
+            )
+            unlocked.raise_for_status()
+            bootstrap = client.get("/api/bootstrap")
         cookies = list(client.cookies.jar)
         session = next(cookie for cookie in cookies if cookie.name == "sessionid")
         verify("Secure HTTP-only session cookie", session.secure and session.has_nonstandard_attr("HttpOnly"))
@@ -70,7 +83,14 @@ def main():
         )
         verify("New session has no fabricated jobs", client.get("/api/jobs").json()["jobs"] == [])
         with httpx.Client(base_url=base, timeout=20) as other:
-            other.get("/api/bootstrap")
+            otherboot = other.get("/api/bootstrap").json()
+            if otherboot.get("access_required"):
+                other.post(
+                    "/api/access/unlock",
+                    json={"password": secret},
+                    headers={"Origin": base, "X-CSRFToken": otherboot["csrf_token"]},
+                ).raise_for_status()
+                other.get("/api/bootstrap")
             verify(
                 "Guest sessions use distinct cookies",
                 other.cookies.get("sessionid") != client.cookies.get("sessionid"),
