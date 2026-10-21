@@ -2,6 +2,8 @@
 
 Rulecraft is the user-facing name of the PatternForge project (previously Clearflow). The repository, API and existing deployment hostname remain unchanged; dated acceptance records retain their original names. See the [interface design notes](docs/UI_DESIGN.md).
 
+The [2026-10-22 UI refresh](reports/UI_REFRESH.md) is deployed: all three code CI jobs and 28 live HTTPS/gate checks passed; an actual retained AWS snapshot completed a new 1,000-row/800-change browser job after its original one-hour connection naturally expired. Full 24-hour retention observation is still not claimed.
+
 A private, natural-language workspace for transforming CSV and Excel data from **your own Amazon S3 bucket**.
 
 **React · Django REST Framework · Celery · Redis · PostgreSQL · PySpark**

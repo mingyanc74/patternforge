@@ -4,6 +4,8 @@
 
 网站：[Clearflow / PatternForge](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/)。应用部署版本 `049cae7f`。
 
+2026-10-22 补充：网页已改名 Rulecraft，并完成融合原版浅色风格的 UI 更新；后端仍为同一已验收版本。[界面上线与真实快照回归记录](../reports/UI_REFRESH.md) 新增了一笔自然一小时连接到期约九小时后、保留期内成功处理的任务（1,000 行 / 800 个邮箱替换）。这不是 STS 到期或完整 24 小时连续观察；下文 2026-10-21 的加速过期原始记录保持不变。
+
 完整测量、任务 ID、SHA-256、原始 JSON、失败和边界见 [真实 AWS 验收报告](../reports/REAL_AWS_ACCEPTANCE.md)。[测试前准备基线](REAL_AWS_PREPARATION_zh.md) 仅保留历史，不再代表当前进度。模拟 S3 / Moto / CI 模型替身仍只作开发证据，不计入上述真实服务结果，也未重新开展独立模拟桶公网验收。
 
 ## 你现在可以怎样测试
