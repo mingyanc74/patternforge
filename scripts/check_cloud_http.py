@@ -28,7 +28,11 @@ def main():
 
     with httpx.Client(base_url=base, timeout=20, follow_redirects=False) as client:
         page = client.get("/")
-        verify("HTTPS application page", page.status_code == 200 and "Clearflow" in page.text)
+        verify("HTTPS application page", page.status_code == 200 and "Rulecraft" in page.text)
+        favicon = client.get("/favicon.svg")
+        verify("Brand favicon is served", favicon.status_code == 200 and "<svg" in favicon.text)
+        font = client.get("/fonts/Manrope-Variable.ttf")
+        verify("Self-hosted variable font is served", font.status_code == 200 and font.content[:4] == b"\x00\x01\x00\x00")
         for path in ["/", "/api/health", "/internal/metrics", "/assets/absent-acceptance-check.js"]:
             response = page if path == "/" else client.get(path)
             verify("Framing denied: " + path, response.headers.get("x-frame-options") == "DENY")

@@ -1,4 +1,6 @@
-# PatternForge
+# Rulecraft
+
+Rulecraft is the user-facing name of the PatternForge project (previously Clearflow). The repository, API and existing deployment hostname remain unchanged; dated acceptance records retain their original names. See the [interface design notes](docs/UI_DESIGN.md).
 
 A private, natural-language workspace for transforming CSV and Excel data from **your own Amazon S3 bucket**.
 
@@ -26,7 +28,7 @@ The repository contains real provider integrations. It does not invent model out
 
 The optional sample bucket remains as **historical development evidence**, not final AWS acceptance. Its earlier 44 checks and 25 HTTPS/session checks used explicitly synthetic sources; they are not included in the 88 real-service checks above. [Sample evidence](reports/SAMPLE_ACCEPTANCE.md) · [Sample guide](docs/SAMPLE_BUCKET_zh.md). No independent simulated public acceptance was repeated after the final real-AWS requirement was confirmed.
 
-Current cloud host: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Clearflow](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). Latest external HTTPS/password/session checks passed 26 checks. Earlier genuine-model semantics passed 10/10 bounded cases, separate from the subsequent real-AWS jobs. See [Azure acceptance](docs/AZURE_ACCEPTANCE_zh.md). The completed-job demo video and reviewer repository access are still pending/need confirmation. Azure student credit and AWS Free plan allowances are finite, not permanently free hosting.
+Current cloud host: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Rulecraft](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). The real-AWS acceptance's external HTTPS/password/session checks passed 26 checks. Earlier genuine-model semantics passed 10/10 bounded cases, separate from the subsequent real-AWS jobs. See [Azure acceptance](docs/AZURE_ACCEPTANCE_zh.md). The completed-job demo video and reviewer repository access are still pending/need confirmation. Azure student credit and AWS Free plan allowances are finite, not permanently free hosting.
 
 Custom identifiers need their format in the instruction (for example, a prefix plus digits), because private data rows are never sent to the model. Refused plans stop before Spark and are not cached. The provider uses operation-specific instructions and public few-shot examples; actual uncached requests still invoke the genuine model, never a built-in prompt-to-regex fallback.
 

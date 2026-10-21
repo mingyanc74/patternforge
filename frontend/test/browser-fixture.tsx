@@ -38,7 +38,7 @@ window.fetch = async (input,init) => {
   let output:unknown={},status=200;
   if(expiredConnection && ((path.includes("/files") && path.startsWith("/s3/")) || path==="/files/inspect"))
     return new Response(JSON.stringify({error:{code:"CONNECTION_EXPIRED",message:"Fixture connection expired. Imported datasets are still available."}}),{status:410,headers:{"Content-Type":"application/json"}});
-  if(path==="/bootstrap") output={csrf_token:"fixture-only",llm_configured:true,limits:{preview_rows:100,max_page_rows:500,max_file_bytes:2147483648,max_excel_bytes:104857600,result_ttl_hours:24}};
+  if(path==="/bootstrap") output={csrf_token:"fixture-only",access_required:new URLSearchParams(location.search).get("gate")==="1",llm_configured:true,limits:{preview_rows:100,max_page_rows:500,max_file_bytes:2147483648,max_excel_bytes:104857600,result_ttl_hours:24,credential_ttl_hours:1,dataset_ttl_hours:24}};
   else if(path==="/datasets") output={datasets:[inspection]};
   else if(path==="/health") output={status:"ready",services:{database:true,queue:true,worker:true,spark:true,llm_configured:true}};
   else if(path==="/s3/connections") output=init?.method==="POST" ? {...connection,bucket:body.bucket,region:body.region} : {connections:expiredConnection ? [] : [connection]};

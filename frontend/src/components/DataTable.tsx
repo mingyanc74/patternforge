@@ -5,11 +5,13 @@ export function DataTable({
   columns,
   selected = [],
   offset = 0,
+  onToggleColumn,
 }: {
   rows: Record<string, unknown>[];
   columns: Column[];
   selected?: string[];
   offset?: number;
+  onToggleColumn?: (name: string) => void;
 }) {
   return (
     <div className="table-wrap data-scroll">
@@ -24,8 +26,26 @@ export function DataTable({
                   selected.includes(column.name) ? "selected-column" : ""
                 }
               >
-                <span className="data-type">Aa</span>
-                {column.name}
+                {onToggleColumn ? (
+                  <button
+                    type="button"
+                    className="column-heading"
+                    aria-label={`Select column ${column.name}`}
+                    aria-pressed={selected.includes(column.name)}
+                    onClick={() => onToggleColumn(column.name)}
+                  >
+                    <span className="data-type">Aa</span>
+                    {column.name}
+                    <span aria-hidden="true" className="column-select-icon">
+                      {selected.includes(column.name) ? "✓" : "+"}
+                    </span>
+                  </button>
+                ) : (
+                  <>
+                    <span className="data-type">Aa</span>
+                    {column.name}
+                  </>
+                )}
               </th>
             ))}
           </tr>

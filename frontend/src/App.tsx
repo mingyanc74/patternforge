@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  Braces,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -15,7 +16,6 @@ import {
   FolderClosed,
   History,
   Info,
-  Layers2,
   LoaderCircle,
   LockKeyhole,
   Plus,
@@ -176,6 +176,16 @@ export default function App() {
       : [];
   const dirty = !!(prompt || columns.length || replacement || newColumn);
   const processing = active(inspection) || active(job);
+  function toggleColumn(name: string) {
+    if (processing) return;
+    setColumns((old) =>
+      operation === "regex_extract"
+        ? [name]
+        : old.includes(name)
+          ? old.filter((column) => column !== name)
+          : [...old, name].slice(0, 50),
+    );
+  }
   const report = useCallback((value: unknown) => {
     if (value instanceof RequestError && value.code === "ACCESS_REQUIRED") {
       setBoot((old) => (old ? { ...old, access_required: true } : old));
@@ -378,7 +388,8 @@ export default function App() {
       else newJob();
       return;
     }
-    const connected = connection && new Date(connection.expires_at).getTime() > Date.now();
+    const connected =
+      connection && new Date(connection.expires_at).getTime() > Date.now();
     go(schema.length ? "editor" : connected ? "files" : "connection");
     if (connection && connected && !schema.length && !files.length)
       void loadFiles(connection, prefix);
@@ -767,6 +778,44 @@ export default function App() {
   if (boot?.access_required)
     return (
       <main className="access-screen">
+        <section className="access-story" aria-label="About Rulecraft">
+          <div className="access-brand">
+            <span className="brand-mark">
+              <Braces />
+            </span>
+            Rulecraft
+          </div>
+          <div className="access-story-content">
+            <h1>
+              Good data starts
+              <br />
+              with a clear rule.
+            </h1>
+            <p>
+              Turn your CSV and Excel files into usable data. Describe the
+              change, review the result, keep the original.
+            </p>
+            <div className="rule-example">
+              <div className="rule-example-head">
+                <span>Transformation example</span>
+                <span className="format-tag">Find &amp; replace</span>
+              </div>
+              <p className="example-instruction">“Find email addresses”</p>
+              <div className="rule-example-values">
+                <span>contact@example.com</span>
+                <ArrowRight aria-hidden="true" />
+                <strong>[REDACTED]</strong>
+              </div>
+            </div>
+            <div className="access-principles">
+              <ShieldCheck />
+              <span>Private files. Read-only sources. Reviewed results.</span>
+            </div>
+          </div>
+          <p className="access-story-footer">
+            A focused workspace for working with your data.
+          </p>
+        </section>
         <form
           className="panel access-panel"
           onSubmit={async (event) => {
@@ -786,15 +835,13 @@ export default function App() {
           }}
         >
           <div className="panel-head">
-            <h1>Clearflow</h1>
-            <LockKeyhole />
+            <span className="access-lock">
+              <LockKeyhole />
+            </span>
+            <h2>Open your workspace</h2>
+            <p>Enter the access password to get started.</p>
           </div>
           <div className="panel-body">
-            <h2>Enter the website access password</h2>
-            <p className="muted">
-              This shared demo entrance is not a personal account or an AWS
-              login. Each browser has its own workspace.
-            </p>
             <div className="field">
               <label htmlFor="website-password">Website access password</label>
               <input
@@ -814,26 +861,36 @@ export default function App() {
             )}
             <button className="primary" disabled={unlocking}>
               {unlocking ? "Checking…" : "Enter workspace"}
+              {!unlocking && <ArrowRight />}
             </button>
+            <p className="access-disclaimer">
+              This is the website entrance, not an AWS login. Your workspace is
+              private to this browser.
+            </p>
           </div>
         </form>
       </main>
     );
   return (
-    <div className="clearflow-app">
+    <div className="rulecraft-app">
+      <a className="skip-link" href="#main-content">
+        Skip to workspace
+      </a>
       <header className="app-header">
         <button
           className="brand"
           onClick={() => go("history")}
-          aria-label="Clearflow home"
+          aria-label="Rulecraft home"
         >
           <span className="brand-mark">
-            <Layers2 />
+            <Braces />
           </span>
-          Clearflow
+          Rulecraft
         </button>
         <span className="header-divider" />
-        <span className="header-label">Data preparation</span>
+        <span className="header-label">
+          Workspace <ChevronRight /> <strong>{titles[screen]}</strong>
+        </span>
         <div className="header-actions">
           {boot?.access_gate_enabled && (
             <button
@@ -848,7 +905,8 @@ export default function App() {
                   .catch(report);
               }}
             >
-              Lock workspace
+              <LockKeyhole />
+              <span className="lock-label">Lock workspace</span>
             </button>
           )}
           <button
@@ -858,12 +916,24 @@ export default function App() {
           >
             <CircleHelp />
           </button>
-          <span className="avatar" aria-label="Guest workspace">
-            G
+          <span className="workspace-identity">
+            <span className="avatar" aria-label="Guest workspace">
+              G
+            </span>
+            <span>Guest workspace</span>
           </span>
         </div>
       </header>
       <aside className="sidebar">
+        <div className="workspace-card">
+          <span className="workspace-card-icon">
+            <Table2 />
+          </span>
+          <div>
+            <strong>Data workspace</strong>
+            <small>Private browser session</small>
+          </div>
+        </div>
         <div className="workspace-label">Workspace</div>
         <nav aria-label="Main navigation">
           <button
@@ -874,6 +944,11 @@ export default function App() {
                 : "")
             }
             onClick={prepare}
+            aria-current={
+              !["connection", "history", "datasets"].includes(screen)
+                ? "page"
+                : undefined
+            }
           >
             <Table2 />
             <span>Prepare data</span>
@@ -881,6 +956,7 @@ export default function App() {
           <button
             className={"nav-item " + (screen === "datasets" ? "is-active" : "")}
             onClick={() => confirmDraft(() => go("datasets"))}
+            aria-current={screen === "datasets" ? "page" : undefined}
           >
             <FolderClosed />
             <span>Imported datasets</span>
@@ -888,6 +964,7 @@ export default function App() {
           <button
             className={"nav-item " + (screen === "history" ? "is-active" : "")}
             onClick={() => go("history")}
+            aria-current={screen === "history" ? "page" : undefined}
           >
             <History />
             <span>Jobs</span>
@@ -898,14 +975,18 @@ export default function App() {
               "nav-item " + (screen === "connection" ? "is-active" : "")
             }
             onClick={() => go("connection")}
+            aria-current={screen === "connection" ? "page" : undefined}
           >
             <Database />
             <span>Connections</span>
           </button>
         </nav>
         <div className="sidebar-end">
-          <FolderClosed />
-          Guest session
+          <ShieldCheck />
+          <div>
+            <strong>Your source stays yours</strong>
+            <span>Original files are never overwritten.</span>
+          </div>
         </div>
       </aside>
       <nav className="mobile-nav" aria-label="Workspace navigation">
@@ -1351,11 +1432,33 @@ export default function App() {
               </div>
             </section>
             <aside className="connection-guide">
-              <h2>How it works</h2>
+              <div className="guide-symbol">
+                <Braces />
+              </div>
+              <h2>One rule, every row.</h2>
+              <p>
+                Start with a private S3 source. Tell Rulecraft what should
+                change, without writing a script.
+              </p>
               <ol>
-                <li>Select a CSV or Excel file</li>
-                <li>Describe your transformation</li>
-                <li>Review the processed data</li>
+                <li>
+                  <div>
+                    <strong>Bring your data</strong>
+                    <span>Select a CSV or an Excel worksheet.</span>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <strong>Describe the change</strong>
+                    <span>Replace, extract or standardize text.</span>
+                  </div>
+                </li>
+                <li>
+                  <div>
+                    <strong>Review the result</strong>
+                    <span>Browse every row. Keep the source intact.</span>
+                  </div>
+                </li>
               </ol>
               <div className="privacy-note">
                 <ShieldCheck />
@@ -1654,6 +1757,7 @@ export default function App() {
                     rows={inputPreview}
                     columns={schema}
                     selected={columns}
+                    onToggleColumn={toggleColumn}
                   />
                 ) : (
                   <div className="empty">
@@ -1662,7 +1766,10 @@ export default function App() {
                   </div>
                 )}
                 <div className="table-bottom">
-                  <span>Previewing {inputPreview.length} rows</span>
+                  <span>
+                    Previewing {inputPreview.length} rows · Click a column to
+                    select it
+                  </span>
                   <span>
                     <LockKeyhole />
                     Read-only
@@ -1675,6 +1782,9 @@ export default function App() {
               >
                 <div className="panel-head">
                   <h2>Transformation</h2>
+                  <span className="selection-count" aria-live="polite">
+                    {columns.length} selected
+                  </span>
                 </div>
                 <form
                   className="config-body"
@@ -1740,15 +1850,7 @@ export default function App() {
                             name="target-columns"
                             value={column.name}
                             checked={columns.includes(column.name)}
-                            onChange={() =>
-                              setColumns((old) =>
-                                operation === "regex_extract"
-                                  ? [column.name]
-                                  : old.includes(column.name)
-                                    ? old.filter((name) => name !== column.name)
-                                    : [...old, column.name].slice(0, 50),
-                              )
-                            }
+                            onChange={() => toggleColumn(column.name)}
                           />
                           {column.name}
                         </label>
@@ -2233,7 +2335,7 @@ export default function App() {
                 </section>
                 <p className="inline-note">
                   <LockKeyhole />
-                  Source unchanged. Blue columns indicate transformation
+                  Source unchanged. Highlighted columns indicate transformation
                   targets, not a cell-by-cell diff.
                 </p>
               </>
@@ -2249,8 +2351,8 @@ export default function App() {
               {new Date(connection.expires_at).getTime() <= Date.now()
                 ? "Imported dataset · "
                 : connection.source_type === "sample"
-                ? "Simulated S3 · "
-                : "Connected to "}
+                  ? "Simulated S3 · "
+                  : "Connected to "}
               {connection.bucket}
             </>
           ) : (
@@ -2268,7 +2370,7 @@ export default function App() {
         <Modal
           title={
             {
-              help: "Clearflow help",
+              help: "Rulecraft help",
               review: "Review job",
               cancel: "Cancel this job?",
               disconnect: "Disconnect from S3?",
@@ -2376,10 +2478,10 @@ export default function App() {
               <h3>Safety and retention</h3>
               <p>
                 Source files are read-only. Connections expire after{" "}
-                {boot?.limits.credential_ttl_hours || 1} hour(s); imported datasets
-                and results are retained separately for{" "}
-                {boot?.limits.dataset_ttl_hours || 24} hours. Jobs belong to this
-                browser session. Never include keys in a recording.
+                {boot?.limits.credential_ttl_hours || 1} hour(s); imported
+                datasets and results are retained separately for{" "}
+                {boot?.limits.dataset_ttl_hours || 24} hours. Jobs belong to
+                this browser session. Never include keys in a recording.
               </p>
             </>
           ) : dialog === "review" ? (

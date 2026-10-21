@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Database, RefreshCw } from "lucide-react";
+import { Clock3, Database, FileSpreadsheet, RefreshCw } from "lucide-react";
 import { api } from "../api";
 import type { Job } from "../api";
 import { dateLabel, filename } from "../utils";
@@ -53,22 +53,37 @@ export function Datasets({
         ) : (
           <div className="dataset-list">
             {items.map((item) => (
-              <article className="sample-card" key={item.id}>
-                <h3>
-                  {filename(item.source_key)}
-                  {item.metadata?.sheet ? " · " + item.metadata.sheet : ""}
-                </h3>
-                <p>
-                  {item.bucket} ·{" "}
+              <article className="dataset-card" key={item.id}>
+                <div className="dataset-title">
+                  <span className="dataset-icon">
+                    <FileSpreadsheet />
+                  </span>
+                  <h3>
+                    {filename(item.source_key)}
+                    {item.metadata?.sheet ? " · " + item.metadata.sheet : ""}
+                  </h3>
+                  <span className="format-tag">
+                    {item.source_key.toLowerCase().endsWith(".xlsx")
+                      ? "XLSX"
+                      : "CSV"}
+                  </span>
+                </div>
+                <p className="dataset-source">
                   {item.source_type === "sample"
                     ? "Simulated source"
                     : "Imported from Amazon S3"}
                 </p>
-                <small>
-                  Imported {dateLabel(item.finished_at || item.created_at)} ·
-                  Retained until {dateLabel(item.dataset_expires_at || "")}
-                </small>
-                <button className="primary" onClick={() => onOpen(item)}>
+                <p className="dataset-bucket">{item.bucket}</p>
+                <div className="dataset-dates">
+                  <small>
+                    Imported {dateLabel(item.finished_at || item.created_at)}
+                  </small>
+                  <small>
+                    <Clock3 /> Retained until{" "}
+                    {dateLabel(item.dataset_expires_at || "")}
+                  </small>
+                </div>
+                <button onClick={() => onOpen(item)}>
                   Use imported dataset
                 </button>
               </article>

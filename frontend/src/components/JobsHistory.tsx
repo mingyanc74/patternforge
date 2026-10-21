@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  FileSpreadsheet,
   History,
   Plus,
   RefreshCw,
@@ -153,7 +154,7 @@ export function JobsHistory({
             <p>
               {query || status
                 ? "Try a different file name, job ID or status."
-                : "Your real processing jobs will appear here. No sample history has been added."}
+                : "Connect a source, describe a change and run your first transformation. Your jobs will appear here."}
             </p>
             <button onClick={query || status ? clear : onCreate}>
               {query || status ? (
@@ -203,7 +204,8 @@ export function JobsHistory({
                             title={job.source_key}
                             onClick={() => onOpen(job)}
                           >
-                            {filename(job.source_key)}
+                            <FileSpreadsheet />
+                            <span>{filename(job.source_key)}</span>
                           </button>
                           <div className="history-meta" title={job.id}>
                             {job.id.slice(0, 8)}
