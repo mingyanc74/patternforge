@@ -4,6 +4,8 @@ Rulecraft is the user-facing name of the PatternForge project (previously Clearf
 
 The [2026-10-22 UI refresh](reports/UI_REFRESH.md) is deployed: all three code CI jobs and 28 live HTTPS/gate checks passed; an actual retained AWS snapshot completed a new 1,000-row/800-change browser job after its original one-hour connection naturally expired. Full 24-hour retention observation is still not claimed.
 
+**Final delivery, 2026-10-22:** [watch the real-AWS demo](#demo-video-and-public-url) (05:18, 1280×720, silent for owner voiceover), [English narration + 中文对照](docs/DEMO_NARRATION_zh.md), [original PDF requirements audit](reports/FINAL_REQUIREMENTS.md). Three new recorded jobs used actual S3 imports and uncached model inference; all succeeded with two Spark executors/eight partitions. Final HTTPS/gate recheck: 28/28. Repository-history secret scan found no matches within its documented scope. Teacher access and a real-AWS million-row measurement remain unconfirmed/not performed.
+
 A private, natural-language workspace for transforming CSV and Excel data from **your own Amazon S3 bucket**.
 
 **React · Django REST Framework · Celery · Redis · PostgreSQL · PySpark**
@@ -30,7 +32,7 @@ The repository contains real provider integrations. It does not invent model out
 
 The optional sample bucket remains as **historical development evidence**, not final AWS acceptance. Its earlier 44 checks and 25 HTTPS/session checks used explicitly synthetic sources; they are not included in the 88 real-service checks above. [Sample evidence](reports/SAMPLE_ACCEPTANCE.md) · [Sample guide](docs/SAMPLE_BUCKET_zh.md). No independent simulated public acceptance was repeated after the final real-AWS requirement was confirmed.
 
-Current cloud host: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Rulecraft](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). The real-AWS acceptance's external HTTPS/password/session checks passed 26 checks. Earlier genuine-model semantics passed 10/10 bounded cases, separate from the subsequent real-AWS jobs. See [Azure acceptance](docs/AZURE_ACCEPTANCE_zh.md). The completed-job demo video and reviewer repository access are still pending/need confirmation. Azure student credit and AWS Free plan allowances are finite, not permanently free hosting.
+Current cloud host: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Rulecraft](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). The real-AWS acceptance's external HTTPS/password/session checks passed 26 checks, followed by [28 final checks](reports/FINAL_HTTP.json) on 2026-10-22. Earlier genuine-model semantics passed 10/10 bounded cases, separate from the subsequent real-AWS jobs. See [Azure acceptance](docs/AZURE_ACCEPTANCE_zh.md). The real-AWS demo is now recorded; the owner's account `mingyanc74` already has repository access, but a separate teacher/reviewer account has not been identified. Azure student credit and AWS Free plan allowances are finite, not permanently free hosting.
 
 Custom identifiers need their format in the instruction (for example, a prefix plus digits), because private data rows are never sent to the model. Refused plans stop before Spark and are not cached. The provider uses operation-specific instructions and public few-shot examples; actual uncached requests still invoke the genuine model, never a built-in prompt-to-regex fallback.
 
@@ -42,7 +44,7 @@ On commit 2f5efb9a, [application CI](https://github.com/mingyanc74/patternforge/
 
 The [3-million-row, 10-column distributed benchmark](reports/BENCHMARK.md) passed: each of the three operations used two real executors, and Spark processing took 102.6–107.5 seconds per operation. See [validation evidence](reports/VALIDATION.md) for tested commits and limitations.
 
-**Before final assessment submission:** record/embed the real-service demonstration video and confirm reviewers can access the private repository. The public genuine-model stack and documented real-AWS runs now exist; million-row fixture timing remains distinct from the 50,000-row genuine-AWS measurement. Track remaining items in [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
+**Before final assessment submission:** optionally add the owner's narration to the recorded silent video, and confirm teachers can access the private repository and receive the website password privately. The public genuine-model stack and real-AWS runs now exist; million-row fixture timing remains distinct from the 50,000-row genuine-AWS measurement. See the [PDF-by-PDF-requirement audit](reports/FINAL_REQUIREMENTS.md) and [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
 
 ## Quick start: complete stack
 
@@ -243,9 +245,19 @@ Caddy terminates HTTPS; secure cookies, trusted origins and HTTPS redirects are 
 
 ## Demo video and public URL
 
-**Public URL:** https://clearflow-patternforge.australiaeast.cloudapp.azure.com/ — external HTTPS, password gate, real S3 CSV/Excel jobs, genuine model, queue, distributed Spark and results verified on 2026-10-21. [Actual AWS report](reports/REAL_AWS_ACCEPTANCE.md). Access password and read-only AWS keys are provided privately, never in this repository.
+**Public URL:** https://clearflow-patternforge.australiaeast.cloudapp.azure.com/ — external HTTPS, password gate and complete processing verified again on 2026-10-22. [Actual AWS report](reports/REAL_AWS_ACCEPTANCE.md) · [Final HTTP checks](reports/FINAL_HTTP.json). Access password and read-only AWS keys are provided privately, never in this repository. Reviewers can enter their own authorized S3 credentials.
 
-**Demo video:** not recorded yet. Use the exact recording checklist in [SUBMISSION.md](docs/SUBMISSION.md), then replace these lines with the verified URL and an embedded video link/player. A UI-only recording does not meet the required real S3 plus completed asynchronous job demonstration.
+**Real AWS demonstration — 05:18, 1280×720, silent:** recorded against the public app with real read-only AWS credentials and real S3 CSV/Excel objects containing synthetic test records. Three newly submitted tasks finish successfully: replacement (800 cells), extraction (900 rows), and two-column normalization (2,000 cells). [Database evidence](reports/DEMO_REAL_JOBS.json).
+
+https://github.com/user-attachments/assets/b9253129-d1f7-431d-afe0-f632db762a74
+
+[Download the repository copy](docs/demo/Rulecraft-Real-AWS-Demo-Silent.mp4) · [Timestamped first-person English script / 中文对照](docs/DEMO_NARRATION_zh.md) · [Capture provenance and timestamps](reports/DEMO_CAPTURE.json)
+
+The password and key-entry portions are paused and explicitly identified with title cards; no fake keys are entered for the recording. Only the actual browser page is captured. Real screenshot frames are sampled approximately twice per second and aspect-fitted to 1280×720; encoding duplicates frames to 20 fps. This is not a native desktop recording. Between-chapter preparation gaps are cut; asynchronous processing is not sped up. The silent version allows the owner to add their own voice; it does not synthesize or impersonate their voice. The video is not evidence of a million-row run or a full-day retention observation.
+
+![Actual completed AWS replacement task](docs/demo/poster.png)
+
+The repository remains private. `mingyanc74` is its owner, not confirmation of a different reviewer's access. Share the repository/video only with intended reviewers; do not put the site password or AWS credentials in README, issues or a recording. [Bounded secret scan](reports/FINAL_SECRET_AUDIT.json) · [Full PDF audit and remaining limitations](reports/FINAL_REQUIREMENTS.md).
 
 ## Troubleshooting
 

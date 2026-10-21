@@ -1,0 +1,120 @@
+{
+  "base_url": "https://clearflow-patternforge.australiaeast.cloudapp.azure.com",
+  "checked_at": "2026-10-21T22:00:48.664067+00:00",
+  "real_aws": false,
+  "completed_application_job": false,
+  "checks": [
+    {
+      "name": "HTTPS application page",
+      "passed": true
+    },
+    {
+      "name": "Brand favicon is served",
+      "passed": true
+    },
+    {
+      "name": "Self-hosted variable font is served",
+      "passed": true
+    },
+    {
+      "name": "Framing denied: /",
+      "passed": true
+    },
+    {
+      "name": "CSP retained: /",
+      "passed": true
+    },
+    {
+      "name": "HSTS retained: /",
+      "passed": true
+    },
+    {
+      "name": "Framing denied: /api/health",
+      "passed": true
+    },
+    {
+      "name": "CSP retained: /api/health",
+      "passed": true
+    },
+    {
+      "name": "HSTS retained: /api/health",
+      "passed": true
+    },
+    {
+      "name": "Framing denied: /internal/metrics",
+      "passed": true
+    },
+    {
+      "name": "CSP retained: /internal/metrics",
+      "passed": true
+    },
+    {
+      "name": "HSTS retained: /internal/metrics",
+      "passed": true
+    },
+    {
+      "name": "Internal monitoring blocked",
+      "passed": true
+    },
+    {
+      "name": "Framing denied: /assets/absent-acceptance-check.js",
+      "passed": true
+    },
+    {
+      "name": "CSP retained: /assets/absent-acceptance-check.js",
+      "passed": true
+    },
+    {
+      "name": "HSTS retained: /assets/absent-acceptance-check.js",
+      "passed": true
+    },
+    {
+      "name": "Missing asset is not SPA HTML",
+      "passed": true
+    },
+    {
+      "name": "Built JavaScript referenced",
+      "passed": true
+    },
+    {
+      "name": "Built JavaScript served with immutable cache",
+      "passed": true
+    },
+    {
+      "name": "Processing health ready",
+      "passed": true
+    },
+    {
+      "name": "API is never publicly cached",
+      "passed": true
+    },
+    {
+      "name": "Gate blocks workspace API",
+      "passed": true
+    },
+    {
+      "name": "Secure HTTP-only session cookie",
+      "passed": true
+    },
+    {
+      "name": "Anonymous state change requires CSRF",
+      "passed": true
+    },
+    {
+      "name": "Missing AWS credentials rejected before connection",
+      "passed": true
+    },
+    {
+      "name": "New session has no preloaded S3 connection",
+      "passed": true
+    },
+    {
+      "name": "New session has no fabricated jobs",
+      "passed": true
+    },
+    {
+      "name": "Guest sessions use distinct cookies",
+      "passed": true
+    }
+  ]
+}

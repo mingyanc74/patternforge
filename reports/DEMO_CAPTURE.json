@@ -1,0 +1,189 @@
+{
+  "duration_seconds": 317.554,
+  "encoded_duration_seconds": 318.05,
+  "width": 1280,
+  "height": 720,
+  "silent": true,
+  "captured_frames": 525,
+  "capture_interval_target_seconds": 0.5,
+  "encoding_fps": 20,
+  "source_frame_sizes": [
+    "(1265, 712)",
+    "(1280, 720)"
+  ],
+  "method": "Actual CUA browser screenshots, aspect-fitted to 1280x720. Static frames are held between captures. Cuts remove off-screen credential entry and between-chapter operator pauses, not async job execution. Encoding duplicates frames; not a native 20-fps screen recording.",
+  "chapters": [
+    {
+      "label": "01 Website password gate",
+      "start": 0.0,
+      "duration": 7.141
+    },
+    {
+      "label": "PRIVATE ENTRY OMITTED",
+      "start": 7.141,
+      "duration": 4
+    },
+    {
+      "label": "02 Connect your own Amazon S3 - before private entry",
+      "start": 11.141,
+      "duration": 6.122
+    },
+    {
+      "label": "03 Bucket and region",
+      "start": 17.263,
+      "duration": 6.089
+    },
+    {
+      "label": "PRIVATE ENTRY OMITTED",
+      "start": 23.352,
+      "duration": 6
+    },
+    {
+      "label": "04 Genuine Amazon S3 file list - private credential entry omitted",
+      "start": 29.352,
+      "duration": 6.102
+    },
+    {
+      "label": "05 Select CSV",
+      "start": 35.454,
+      "duration": 3.053
+    },
+    {
+      "label": "06 Real S3 import starts asynchronously",
+      "start": 38.507,
+      "duration": 14.436
+    },
+    {
+      "label": "07 Spark ingestion of real CSV",
+      "start": 52.943,
+      "duration": 12.281
+    },
+    {
+      "label": "08 Choose Email and describe replacement",
+      "start": 65.224,
+      "duration": 8.161
+    },
+    {
+      "label": "09 Review replacement task",
+      "start": 73.385,
+      "duration": 5.078
+    },
+    {
+      "label": "10 Asynchronous task - real LLM and Spark",
+      "start": 78.463,
+      "duration": 30.43
+    },
+    {
+      "label": "11 Running to completion - no accelerated processing",
+      "start": 108.893,
+      "duration": 16.31
+    },
+    {
+      "label": "12 Replacement results",
+      "start": 125.203,
+      "duration": 6.134
+    },
+    {
+      "label": "13 Paginated result page two",
+      "start": 131.337,
+      "duration": 5.09
+    },
+    {
+      "label": "14 Select Excel source",
+      "start": 136.427,
+      "duration": 3.058
+    },
+    {
+      "label": "15 Select real Excel object",
+      "start": 139.485,
+      "duration": 3.053
+    },
+    {
+      "label": "16 Discover workbook sheets with Spark",
+      "start": 142.538,
+      "duration": 24.308
+    },
+    {
+      "label": "17 Excel TestData preview",
+      "start": 166.846,
+      "duration": 7.158
+    },
+    {
+      "label": "18 Configure Excel field extraction",
+      "start": 174.004,
+      "duration": 4.083
+    },
+    {
+      "label": "19 Natural-language extraction rule",
+      "start": 178.087,
+      "duration": 5.074
+    },
+    {
+      "label": "20 Excel extraction asynchronous execution",
+      "start": 183.161,
+      "duration": 27.351
+    },
+    {
+      "label": "21 Extraction completion",
+      "start": 210.512,
+      "duration": 18.367
+    },
+    {
+      "label": "22 Extracted new column",
+      "start": 228.879,
+      "duration": 6.113
+    },
+    {
+      "label": "23 Reuse imported Excel snapshot",
+      "start": 234.992,
+      "duration": 3.044
+    },
+    {
+      "label": "24 Choose standardization",
+      "start": 238.036,
+      "duration": 3.044
+    },
+    {
+      "label": "25 Multi-column cleanup instructions",
+      "start": 241.08,
+      "duration": 6.637
+    },
+    {
+      "label": "26 Review multi-column standardization",
+      "start": 247.717,
+      "duration": 5.108
+    },
+    {
+      "label": "27 Standardization asynchronous execution",
+      "start": 252.825,
+      "duration": 26.969
+    },
+    {
+      "label": "28 Standardization completion",
+      "start": 279.794,
+      "duration": 12.251
+    },
+    {
+      "label": "29 Normalized results",
+      "start": 292.045,
+      "duration": 6.143
+    },
+    {
+      "label": "30 Retained independent input snapshots",
+      "start": 298.188,
+      "duration": 6.11
+    },
+    {
+      "label": "31 Persistent job history",
+      "start": 304.298,
+      "duration": 7.125
+    },
+    {
+      "label": "32 Service status",
+      "start": 311.423,
+      "duration": 6.131
+    }
+  ],
+  "video_bytes": 2443480,
+  "video_sha256": "5e6cbfb75e94e502ffc3c3870e425d15c98c84098f20333d582d7f23f057a173"
+}
