@@ -6,7 +6,7 @@ Checked 2026-10-22 against both pages of **Technical Assessment — Distributed 
 
 - **Real-service:** [88 AWS checks](REAL_AWS_ACCEPTANCE.md), real AWS bytes and hashes, actual local Qwen3 inference, public Azure deployment, Celery/Redis/PostgreSQL and isolated distributed Spark.
 - **Development:** [automated tests](VALIDATION.md), deterministic S3/LLM protocol fixtures, and [three-million-row benchmark](BENCHMARK.md). These remain valuable, but are not genuine AWS acceptance conclusions.
-- **New final recording:** [README demo](../README.md#demo-video-and-public-url), three newly submitted real-AWS tasks and [safe database metadata](DEMO_REAL_JOBS.json). The silent video is ready for the owner's voiceover.
+- **New final recording:** [README demo](../README.md#demo-video-and-public-url), three newly submitted real-AWS tasks and [safe database metadata](DEMO_REAL_JOBS.json). Owner-recorded English narration has been aligned and approved; the silent backup is preserved. [Voiceover provenance](VOICEOVER_DELIVERY.json).
 
 ## Requirement-by-requirement
 
@@ -36,7 +36,7 @@ Checked 2026-10-22 against both pages of **Technical Assessment — Distributed 
 | Complete GitHub source | Pushed; private | Owner `mingyanc74` has access; **actual teacher's separate account still unconfirmed** |
 | README setup/run/architecture/trade-offs | Updated | README + architecture/API/security/deployment guides + dated evidence |
 | Public complete app, reviewer own S3 | Live verified | [Azure HTTPS app](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/), [28 final HTTP/gate checks](FINAL_HTTP.json). Shared access password supplied privately; finite student credits |
-| Short video real S3 + completed async task, embedded README | Silent demonstration recorded | 1280×720 H.264, 05:18; actual CSV/Excel and three completed jobs. Keys/password entered off-screen and pause disclosed. Owner voiceover optional, provided separate script |
+| Short video real S3 + completed async task, embedded README | Demonstration recorded with owner-approved narration | 1280×720 H.264/AAC, 05:18; actual CSV/Excel and three completed jobs. Keys/password entered off-screen and pause disclosed. Concise script and silent backup retained; video stream unchanged by audio alignment |
 
 ## Retention and security follow-ups
 

@@ -4,7 +4,7 @@ Rulecraft is the user-facing name of the PatternForge project (previously Clearf
 
 The [2026-10-22 UI refresh](reports/UI_REFRESH.md) is deployed: all three code CI jobs and 28 live HTTPS/gate checks passed; an actual retained AWS snapshot completed a new 1,000-row/800-change browser job after its original one-hour connection naturally expired. Full 24-hour retention observation is still not claimed.
 
-**Final delivery, 2026-10-22:** [watch the real-AWS demo](#demo-video-and-public-url) (05:18, 1280×720, silent for owner voiceover), [English narration + 中文对照](docs/DEMO_NARRATION_zh.md), [original PDF requirements audit](reports/FINAL_REQUIREMENTS.md). Three new recorded jobs used actual S3 imports and uncached model inference; all succeeded with two Spark executors/eight partitions. Final HTTPS/gate recheck: 28/28. Repository-history secret scan found no matches within its documented scope. Teacher access and a real-AWS million-row measurement remain unconfirmed/not performed.
+**Final delivery, 2026-10-22:** [watch the real-AWS demo](#demo-video-and-public-url) (05:18, 1280×720, with owner-recorded English narration), [concise narration + 中文对照](docs/DEMO_NARRATION_SIMPLE_zh.md), [original PDF requirements audit](reports/FINAL_REQUIREMENTS.md). Three new recorded jobs used actual S3 imports and uncached model inference; all succeeded with two Spark executors/eight partitions. Final HTTPS/gate recheck: 28/28. Repository-history secret scan found no matches within its documented scope. Teacher access and a real-AWS million-row measurement remain unconfirmed/not performed.
 
 A private, natural-language workspace for transforming CSV and Excel data from **your own Amazon S3 bucket**.
 
@@ -44,7 +44,7 @@ On commit 2f5efb9a, [application CI](https://github.com/mingyanc74/patternforge/
 
 The [3-million-row, 10-column distributed benchmark](reports/BENCHMARK.md) passed: each of the three operations used two real executors, and Spark processing took 102.6–107.5 seconds per operation. See [validation evidence](reports/VALIDATION.md) for tested commits and limitations.
 
-**Before final assessment submission:** optionally add the owner's narration to the recorded silent video, and confirm teachers can access the private repository and receive the website password privately. The public genuine-model stack and real-AWS runs now exist; million-row fixture timing remains distinct from the 50,000-row genuine-AWS measurement. See the [PDF-by-PDF-requirement audit](reports/FINAL_REQUIREMENTS.md) and [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
+**Before final assessment submission:** confirm teachers can access the private repository and receive the website password privately. The public genuine-model stack, narrated demo and real-AWS runs now exist; million-row fixture timing remains distinct from the 50,000-row genuine-AWS measurement. See the [PDF-by-PDF-requirement audit](reports/FINAL_REQUIREMENTS.md) and [SUBMISSION.md](docs/SUBMISSION.md); unverified items are not claimed as complete.
 
 ## Quick start: complete stack
 
@@ -247,13 +247,13 @@ Caddy terminates HTTPS; secure cookies, trusted origins and HTTPS redirects are 
 
 **Public URL:** https://clearflow-patternforge.australiaeast.cloudapp.azure.com/ — external HTTPS, password gate and complete processing verified again on 2026-10-22. [Actual AWS report](reports/REAL_AWS_ACCEPTANCE.md) · [Final HTTP checks](reports/FINAL_HTTP.json). Access password and read-only AWS keys are provided privately, never in this repository. Reviewers can enter their own authorized S3 credentials.
 
-**Real AWS demonstration — 05:18, 1280×720, silent:** recorded against the public app with real read-only AWS credentials and real S3 CSV/Excel objects containing synthetic test records. Three newly submitted tasks finish successfully: replacement (800 cells), extraction (900 rows), and two-column normalization (2,000 cells). [Database evidence](reports/DEMO_REAL_JOBS.json).
+**Real AWS demonstration — 05:18, 1280×720, with owner-recorded narration:** recorded against the public app with real read-only AWS credentials and real S3 CSV/Excel objects containing synthetic test records. Three newly submitted tasks finish successfully: replacement (800 cells), extraction (900 rows), and two-column normalization (2,000 cells). [Database evidence](reports/DEMO_REAL_JOBS.json).
 
-https://github.com/user-attachments/assets/b9253129-d1f7-431d-afe0-f632db762a74
+https://github.com/user-attachments/assets/885264f4-1a8e-4ffc-b21c-2e695843ce48
 
-[Download the repository copy](docs/demo/Rulecraft-Real-AWS-Demo-Silent.mp4) · [Timestamped first-person English script / 中文对照](docs/DEMO_NARRATION_zh.md) · [Capture provenance and timestamps](reports/DEMO_CAPTURE.json)
+[Download the narrated video](docs/demo/Rulecraft-Real-AWS-Demo-Voiceover.mp4) · [Concise English script / 中文对照](docs/DEMO_NARRATION_SIMPLE_zh.md) · [Silent backup](docs/demo/Rulecraft-Real-AWS-Demo-Silent.mp4) · [Capture provenance and timestamps](reports/DEMO_CAPTURE.json) · [Voiceover provenance](reports/VOICEOVER_DELIVERY.json)
 
-The password and key-entry portions are paused and explicitly identified with title cards; no fake keys are entered for the recording. Only the actual browser page is captured. Real screenshot frames are sampled approximately twice per second and aspect-fitted to 1280×720; encoding duplicates frames to 20 fps. This is not a native desktop recording. Between-chapter preparation gaps are cut; asynchronous processing is not sped up. The silent version allows the owner to add their own voice; it does not synthesize or impersonate their voice. The video is not evidence of a million-row run or a full-day retention observation.
+The password and key-entry portions are paused and explicitly identified with title cards; no fake keys are entered for the recording. Only the actual browser page is captured. Real screenshot frames are sampled approximately twice per second and aspect-fitted to 1280×720; encoding duplicates frames to 20 fps. This is not a native desktop recording. Between-chapter preparation gaps are cut; asynchronous processing is not sped up. The owner supplied and approved the spoken narration. It was aligned locally with volume adjustment, without generated speech or voice-speed changes; the video stream remains byte-identical to the silent backup. The private original audio and automatic transcript are not committed. The video is not evidence of a million-row run or a full-day retention observation.
 
 ![Actual completed AWS replacement task](docs/demo/poster.png)
 

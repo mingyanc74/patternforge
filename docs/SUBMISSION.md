@@ -2,7 +2,7 @@
 
 This file distinguishes implemented source from externally verified deliverables. It is intentionally not a claim that all external resources already exist.
 
-**2026-10-22 final-delivery update:** public deployment recheck passed 28 HTTPS/gate checks. A 05:18 silent real-AWS video now shows three newly submitted successful tasks with actual S3 CSV/Excel, uncached model inference, two executors and eight partitions. It is embedded in README, with an English/Chinese voiceover script. Prior 88 genuine-AWS assertions remain separate and unchanged. [Full original-PDF audit](../reports/FINAL_REQUIREMENTS.md). A separate teacher account and genuine-AWS million-row measurement are not claimed complete.
+**2026-10-22 final-delivery update:** public deployment recheck passed 28 HTTPS/gate checks. A 05:18 real-AWS video with owner-recorded English narration shows three newly submitted successful tasks with actual S3 CSV/Excel, uncached model inference, two executors and eight partitions. It is embedded in README, with a concise English/Chinese script and silent backup. Prior 88 genuine-AWS assertions remain separate and unchanged. [Full original-PDF audit](../reports/FINAL_REQUIREMENTS.md). A separate teacher account and genuine-AWS million-row measurement are not claimed complete.
 
 | Requirement | Evidence to attach |
 |---|---|
@@ -41,7 +41,7 @@ The initial backlog's 3-million-row, 10-minute and 2-second response targets are
 - Real AWS credentials and two private buckets: now created with user approval and verified through the application; read-only credentials supplied privately, never committed. [Real AWS report](../reports/REAL_AWS_ACCEPTANCE.md).
 - Genuine model: free Qwen3 CPU model passed the expanded 10/10 semantic checks both natively and in the [complete container verification](https://github.com/mingyanc74/patternforge/actions/runs/39429271689). That run passed the full task pipeline with synthetic S3, not real AWS or a public deployment. An external API key is optional, not required by the free-model overlay.
 - Independent Docker-capable public host and DNS hostname: complete stack is running on the user-approved Azure student-credit VM. [Azure checks](AZURE_ACCEPTANCE_zh.md) are supplemented by the separate real-AWS run. This is independent hosting, not a laptop tunnel. Student credits remain finite.
-- Actual end-to-end recording: **recorded and embedded**, using genuine AWS with secrets omitted and pauses disclosed. [Narration script](DEMO_NARRATION_zh.md). Owner voiceover is not yet recorded; it is not a PDF requirement for audio.
+- Actual end-to-end recording: **recorded with owner-approved narration**, using genuine AWS with secrets omitted and pauses disclosed. [Concise narration script](DEMO_NARRATION_SIMPLE_zh.md). The silent backup is preserved; no generated voice, video speed change or new processing result was introduced.
 - Reviewer access to the private GitHub repository: owner `mingyanc74` already has access; **a separate teacher/reviewer account is not confirmed**. Do not publish the repository or invite an unspecified reviewer automatically. Supply the website gate password privately to the assessor.
 - Larger data: real AWS tested at 50,000 rows; existing 3-million-row CI benchmark remains separate synthetic-provider evidence, not a real-AWS measurement.
 
