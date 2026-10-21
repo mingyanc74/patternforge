@@ -317,7 +317,7 @@ input[type="radio"] {
   min-width: 0;
 }
 .step-pair:last-child {
-  flex: 0;
+  flex: 0 0 auto;
 }
 .step {
   display: flex;
@@ -1354,7 +1354,7 @@ th.selected-column {
     justify-content: space-between;
   }
   .step-pair {
-    flex: 0;
+    flex: 0 0 auto;
   }
   .step {
     flex-direction: column;

@@ -17,7 +17,7 @@
 | HTTP/会话 | `scripts/check_cloud_http.py` 的 25 项检查通过：安全头、静态资源、内部监控阻断、安全 Cookie、独立会话、匿名 CSRF、空凭据拒绝及没有虚假历史 |
 | 真实模型 | 官方校验的 Qwen3-4B Q4_K_M，llama.cpp CPU；10/10 固定语义案例通过，每项 5.559–26.473 秒；不是任意输入的准确率保证 |
 | 真实 Spark | 合成 10,000 行，10,000 个预期替换，两个执行器、8 分区，10.9 秒，Spark 3.5.8；不涉及 S3，也不是完整应用 Job 的端到端耗时 |
-| 网页交互 | 正式页面、空字段校验、STS Token 输入、帮助中的服务状态、无预置任务历史已检查 |
+| 网页交互 | 正式页面、空字段校验、STS Token 输入、帮助中的服务状态、无预置任务历史已检查；修复了窄窗口步骤导航零宽 flex 导致的横向溢出 |
 | 本机回归 | 76 passed / 1 skipped；跳过项为 Windows 缺少 Hadoop 原生 DLL 的 Parquet 测试，不能把跳过冒充通过；该既有路径在 Linux CI 验证 |
 
 原始非敏感报告保留在被 Git 忽略的 `reports/local/azure-model-evaluation.json`、`azure-spark-acceptance.json`、`cloud-http.json`。不提交私钥、环境密钥、账户标识或包含联系信息的 Azure 截图。
