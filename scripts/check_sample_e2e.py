@@ -222,7 +222,7 @@ def main():
             "Trim spaces, collapse repeated whitespace, then convert to lowercase",
         )
         page = request("GET", f"/jobs/{normalized['id']}/results?limit=100")
-        expected_names = {1: "alice smith", 2: "陈 小雨", 3: "bob, taylor", 0: "two lines"}
+        expected_names = {1: "alice smith", 2: "\u9648 \u5c0f\u96e8", 3: "bob, taylor", 0: "two lines"}
         verify(
             "Actual normalization / Chinese / newlines",
             all(row["Name"] == expected_names[int(row["ID"]) % 4] for row in page["rows"]),

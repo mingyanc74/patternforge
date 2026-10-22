@@ -13,7 +13,7 @@
 - API/task tests: dynamic encrypted credential storage, file-list pagination, CSRF and ownership, immediate outbox submission, idempotency, retries, duplicate delivery, cancellation state and stale-worker recovery.
 - Parquet page-reader tests: multiple files/row groups, signed cursor validation, owner isolation, empty/expired/not-ready results.
 - Frontend TypeScript/production build: passed. Unit tests: **5 passed**, also verified in the CI run below.
-- Browser inspection: Clearflow live setup state, workspace and history; separately labelled fixture-only job/result/cancel flows; 375px mobile layout. See docs/CLEARFLOW_UI_zh.md.
+- Browser inspection: Clearflow live setup state, workspace and history; separately labelled fixture-only job/result/cancel flows; 375px mobile layout. See [historical UI checks](../docs/CLEARFLOW_UI.md).
 - Genuine Qwen3 CPU model: expanded **10/10** fixed semantic samples passed natively and in the verified Linux container run below, including Chinese instructions and ambiguity refusal. See MODEL_EVALUATION.md. Not proof of arbitrary model accuracy or a public deployment.
 
 ## CI verification

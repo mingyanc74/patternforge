@@ -16,7 +16,7 @@ describe("file presentation", () => {
     expect(formatBytes(1024 ** 3 * 2)).toBe("2.0 GB");
   });
   it("preserves unicode and spaces in object names", () => {
-    expect(filename("客户/October export.csv")).toBe("October export.csv");
+    expect(filename("\u5ba2\u6237/October export.csv")).toBe("October export.csv");
   });
 });
 

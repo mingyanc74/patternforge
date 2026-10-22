@@ -30,7 +30,8 @@ CATALOG = {
 
 def customer_rows(count):
     yield ["ID", "Name", "Email", "Notes", "City"]
-    names = ["  ALICE   SMITH  ", "  陈   小雨  ", "Bob, Taylor", "Two\nLines"]
+    # Unicode escapes retain the original multilingual fixture values at runtime.
+    names = ["  ALICE   SMITH  ", "  \u9648   \u5c0f\u96e8  ", "Bob, Taylor", "Two\nLines"]
     for number in range(1, count + 1):
         email = (
             "\\N"

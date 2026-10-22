@@ -88,7 +88,8 @@ def test_extract_first_match_and_preserve_original(spark):
 def test_normalization_and_special_column_names(spark):
     from spark_engine.transformations import transform
 
-    df = sample(spark).withColumnRenamed("Name", "用户.name`text")
+    # Exercise a Chinese column name containing SQL punctuation without changing its value.
+    df = sample(spark).withColumnRenamed("Name", "\u7528\u6237.name`text")
     plan = {
         "operation": "normalize",
         "pattern": None,
@@ -96,9 +97,12 @@ def test_normalization_and_special_column_names(spark):
         "steps": ["trim", "collapse_whitespace", "lowercase"],
         "explanation": "Clean names",
     }
-    rows = {r.ID: r.asDict() for r in transform(df, plan, {"target_columns": ["用户.name`text"]}).collect()}
-    assert rows["001"]["用户.name`text"] == "alice smith"
-    assert rows["003"]["用户.name`text"] is None
+    rows = {
+        r.ID: r.asDict()
+        for r in transform(df, plan, {"target_columns": ["\u7528\u6237.name`text"]}).collect()
+    }
+    assert rows["001"]["\u7528\u6237.name`text"] == "alice smith"
+    assert rows["003"]["\u7528\u6237.name`text"] is None
 
 
 def test_partitioning_does_not_change_values(spark, email_plan):

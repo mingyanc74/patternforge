@@ -14,7 +14,7 @@ This was an actual inference run, not a canned response server or prompt-to-rege
 | Instruction / operation | Expected semantic result | Result | Request + validation seconds |
 |---|---|---|---:|
 | Find email addresses | plus-tag email with .technology TLD | Pass | 28.641 |
-| 识别文本中的电子邮箱地址 | hello@example.com | Pass | 18.734 |
+| Chinese-language instruction to identify email addresses (exact input retained in `scripts/evaluate_model.py` as Unicode escapes) | hello@example.com | Pass | 18.734 |
 | Match runs of decimal digits | 123 from Order AB123X | Pass | 17.516 |
 | Extract the email address from the text | team@example.org | Pass | 16.078 |
 | Trim ends, collapse repeated whitespace and convert to lowercase | alice smith | Pass | 14.953 |

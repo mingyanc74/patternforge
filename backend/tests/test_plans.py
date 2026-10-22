@@ -37,9 +37,10 @@ def test_model_request_keeps_data_and_credentials_private(email_plan, mocker, se
     response.json.return_value = {
         "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(email_plan)}}]
     }
+    # Keep a genuine Chinese instruction at runtime, not literal JSON escape text.
     config = {
         "operation": "regex_replace",
-        "prompt": "识别文本中的电子邮箱地址",
+        "prompt": "\u8bc6\u522b\u6587\u672c\u4e2d\u7684\u7535\u5b50\u90ae\u7bb1\u5730\u5740",
         "target_columns": ["Email"],
         "replacement": "private-replacement",
         "preview": ["private-cell"],
@@ -47,7 +48,10 @@ def test_model_request_keeps_data_and_credentials_private(email_plan, mocker, se
     }
     assert request_plan(config) == email_plan
     payload = http_client.post.call_args.kwargs["json"]
-    assert "识别文本中的电子邮箱地址" in payload["messages"][-1]["content"]
+    assert (
+        "\u8bc6\u522b\u6587\u672c\u4e2d\u7684\u7535\u5b50\u90ae\u7bb1\u5730\u5740"
+        in payload["messages"][-1]["content"]
+    )
     assert "\\u8bc6" not in payload["messages"][-1]["content"]
     messages = json.dumps(payload["messages"])
     assert (

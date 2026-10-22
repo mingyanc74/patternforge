@@ -4,13 +4,15 @@ Rulecraft is the user-facing name of the PatternForge project (previously Clearf
 
 The [2026-10-22 UI refresh](reports/UI_REFRESH.md) is deployed: all three code CI jobs and 28 live HTTPS/gate checks passed; an actual retained AWS snapshot completed a new 1,000-row/800-change browser job after its original one-hour connection naturally expired. Full 24-hour retention observation is still not claimed.
 
-**Final delivery, 2026-10-22:** [watch the real-AWS demo](#demo-video-and-public-url) (05:18, 1280×720, with owner-recorded English narration), [concise narration + 中文对照](docs/DEMO_NARRATION_SIMPLE_zh.md), [original PDF requirements audit](reports/FINAL_REQUIREMENTS.md). Three new recorded jobs used actual S3 imports and uncached model inference; all succeeded with two Spark executors/eight partitions. Final HTTPS/gate recheck: 28/28. Repository-history secret scan found no matches within its documented scope. Teacher access and a real-AWS million-row measurement remain unconfirmed/not performed.
+**Final delivery, 2026-10-22:** [watch the real-AWS demo](#demo-video-and-public-url) (05:18, 1280×720, with owner-recorded English narration), [concise narration script](docs/DEMO_NARRATION_SIMPLE.md), [original PDF requirements audit](reports/FINAL_REQUIREMENTS.md). Three new recorded jobs used actual S3 imports and uncached model inference; all succeeded with two Spark executors/eight partitions. Final HTTPS/gate recheck: 28/28. Repository-history secret scan found no matches within its documented scope. Assessor access and a real-AWS million-row measurement remain unconfirmed/not performed.
 
 A private, natural-language workspace for transforming CSV and Excel data from **your own Amazon S3 bucket**.
 
 **React · Django REST Framework · Celery · Redis · PostgreSQL · PySpark**
 
-[中文启动说明](docs/START_HERE_zh.md) · [零订阅费用方案](docs/FREE_ONLY_zh.md) · [Architecture](docs/ARCHITECTURE.md) · [Submission checklist](docs/SUBMISSION.md) · [API contract](docs/API.md) · [Security](docs/SECURITY.md)
+[Getting started](docs/START_HERE.md) · [User stories and acceptance criteria](docs/BACKLOG.md) · [Free-resource plan](docs/FREE_ONLY.md) · [Architecture](docs/ARCHITECTURE.md) · [Submission checklist](docs/SUBMISSION.md) · [API contract](docs/API.md) · [Security](docs/SECURITY.md)
+
+Repository documentation, backlog and narration scripts are maintained in English. Multilingual test inputs retain their original runtime values through Unicode source escapes; translating documentation does not alter test data or historical acceptance results.
 
 ## What it does
 
@@ -22,17 +24,17 @@ A private, natural-language workspace for transforming CSV and Excel data from *
 - Track persistent jobs, recover after refresh, retry transient failures, and cancel actual computation.
 - Browse immutable Parquet results using signed cursors without recomputing or collecting the whole dataset.
 - Monitor workers with Flower and persisted job metrics. Start the complete stack with Docker Compose.
-- Optional **simulated read-only bucket** for testing without AWS credentials (`SAMPLE_BUCKET_ENABLED=1`): synthetic CSV/Excel data, the same genuine model/Celery/Spark pipeline, and explicit sample labels in API/UI. It is not Amazon S3 and is not evidence of real-AWS acceptance. [Sample test guide](docs/SAMPLE_BUCKET_zh.md).
+- Optional **simulated read-only bucket** for testing without AWS credentials (`SAMPLE_BUCKET_ENABLED=1`): synthetic CSV/Excel data, the same genuine model/Celery/Spark pipeline, and explicit sample labels in API/UI. It is not Amazon S3 and is not evidence of real-AWS acceptance. [Sample test guide](docs/SAMPLE_BUCKET.md).
 
 ## Honest validation status
 
 The repository contains real provider integrations. It does not invent model output when a model key is missing.
 
-**Real Amazon AWS acceptance completed on 2026-10-21:** 65 end-to-end checks and 23 stability checks passed against the public deployment using two genuine private S3 buckets, user-entered read-only keys, CSV/Excel snapshots and actual model/Celery/Redis/PySpark processing. Both formats passed all three operations; a real 50,000-row S3 file produced 40,000 expected email replacements using two executors/eight partitions (Spark 13.305 seconds). The actual browser also connected, imported and displayed successful results. See [real AWS evidence, raw reports and limitations](reports/REAL_AWS_ACCEPTANCE.md) · [中文测试指南](docs/REAL_AWS_ACCEPTANCE_zh.md). Expiry was accelerated for one app connection; retry used an isolated one-attempt injected fault, not a natural AWS outage. No full 24-hour observation or real-AWS million-row run is claimed.
+**Real Amazon AWS acceptance completed on 2026-10-21:** 65 end-to-end checks and 23 stability checks passed against the public deployment using two genuine private S3 buckets, user-entered read-only keys, CSV/Excel snapshots and actual model/Celery/Redis/PySpark processing. Both formats passed all three operations; a real 50,000-row S3 file produced 40,000 expected email replacements using two executors/eight partitions (Spark 13.305 seconds). The actual browser also connected, imported and displayed successful results. See [real AWS evidence, raw reports and limitations](reports/REAL_AWS_ACCEPTANCE.md) · [real-AWS testing guide](docs/REAL_AWS_ACCEPTANCE.md). Expiry was accelerated for one app connection; retry used an isolated one-attempt injected fault, not a natural AWS outage. No full 24-hour observation or real-AWS million-row run is claimed.
 
-The optional sample bucket remains as **historical development evidence**, not final AWS acceptance. Its earlier 44 checks and 25 HTTPS/session checks used explicitly synthetic sources; they are not included in the 88 real-service checks above. [Sample evidence](reports/SAMPLE_ACCEPTANCE.md) · [Sample guide](docs/SAMPLE_BUCKET_zh.md). No independent simulated public acceptance was repeated after the final real-AWS requirement was confirmed.
+The optional sample bucket remains as **historical development evidence**, not final AWS acceptance. Its earlier 44 checks and 25 HTTPS/session checks used explicitly synthetic sources; they are not included in the 88 real-service checks above. [Sample evidence](reports/SAMPLE_ACCEPTANCE.md) · [Sample guide](docs/SAMPLE_BUCKET.md). No independent simulated public acceptance was repeated after the final real-AWS requirement was confirmed.
 
-Current cloud host: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Rulecraft](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). The real-AWS acceptance's external HTTPS/password/session checks passed 26 checks, followed by [28 final checks](reports/FINAL_HTTP.json) on 2026-10-22. Earlier genuine-model semantics passed 10/10 bounded cases, separate from the subsequent real-AWS jobs. See [Azure acceptance](docs/AZURE_ACCEPTANCE_zh.md). The real-AWS demo is now recorded; the owner's account `mingyanc74` already has repository access, but a separate teacher/reviewer account has not been identified. Azure student credit and AWS Free plan allowances are finite, not permanently free hosting.
+Current cloud host: **Azure for Students**, without a payment method or paid upgrade. The complete x86-64 stack is running at [Rulecraft](https://clearflow-patternforge.australiaeast.cloudapp.azure.com/). The real-AWS acceptance's external HTTPS/password/session checks passed 26 checks, followed by [28 final checks](reports/FINAL_HTTP.json) on 2026-10-22. Earlier genuine-model semantics passed 10/10 bounded cases, separate from the subsequent real-AWS jobs. See [Azure acceptance](docs/AZURE_ACCEPTANCE.md). The real-AWS demo is now recorded; the owner's account `mingyanc74` already has repository access, but a separate assessor/reviewer account has not been identified. Azure student credit and AWS Free plan allowances are finite, not permanently free hosting.
 
 Custom identifiers need their format in the instruction (for example, a prefix plus digits), because private data rows are never sent to the model. Refused plans stop before Spark and are not cached. The provider uses operation-specific instructions and public few-shot examples; actual uncached requests still invoke the genuine model, never a built-in prompt-to-regex fallback.
 
@@ -71,7 +73,7 @@ python scripts/free_model.py --download-only
 docker compose -f docker-compose.yml -f compose.local-model.yml up --build
 ```
 
-The model stays on the internal container network. See [free-only instructions and public-hosting limitations](docs/FREE_ONLY_zh.md). Otherwise, use the regular command below with your configured provider.
+The model stays on the internal container network. See [free-only instructions and public-hosting limitations](docs/FREE_ONLY.md). Otherwise, use the regular command below with your configured provider.
 
 ```bash
 docker compose up --build
@@ -169,7 +171,7 @@ flowchart LR
 - Each job has a lease and attempt-specific workspace. Duplicate deliveries cannot overwrite terminal states. Only a complete manifest becomes visible.
 - New imports use AWS credentials only in orchestration; subsequent Spark jobs read retained snapshots without AWS credentials. The legacy S3A path retains an isolated credential context. Plaintext keys are never passed in command-line arguments or Celery messages.
 
-Website access, browser ownership and S3 authorization are separate mechanisms. See [dataset retention and password access](docs/DATASETS_AND_ACCESS_zh.md).
+Website access, browser ownership and S3 authorization are separate mechanisms. See [dataset retention and password access](docs/DATASETS_AND_ACCESS.md).
 - The worker polls cancellation while its child runs. An independent driver lease guard also stops work after parent loss, cancellation, lease replacement or a hard deadline.
 - Parquet is split into bounded files and indexed by row-group metadata. The API reads the relevant batches through PyArrow rather than starting Spark for every page.
 - The provided deployment uses a named shared volume, appropriate for a single-host multi-container assessment. A multi-host deployment must replace it with a shared filesystem or object-store-aware result service; mounting unrelated local directories on different hosts is not supported.
@@ -225,7 +227,7 @@ Upload only to a bucket you intentionally choose, then process it through the no
 
 ## Production deployment
 
-Selected delivery mode: **independent cloud host, free resources only**. No laptop tunnel or static-only deployment is substituted. The complete stack is deployed on the user-approved Azure student-credit VM; the repository does not automatically provision additional cloud resources. Follow the [independent-cloud checklist](docs/CLOUD_DEPLOY_zh.md) for reproducible deployment and remaining real-S3 acceptance.
+Selected delivery mode: **independent cloud host, free resources only**. No laptop tunnel or static-only deployment is substituted. The complete stack is deployed on the user-approved Azure student-credit VM; the repository does not automatically provision additional cloud resources. Follow the [independent-cloud checklist](docs/CLOUD_DEPLOY.md) for reproducible deployment and real-S3 verification, with actual outcomes recorded separately.
 
 For the internal free CPU model on that host, set the real DNS hostname in the private environment file, then run:
 
@@ -251,7 +253,7 @@ Caddy terminates HTTPS; secure cookies, trusted origins and HTTPS redirects are 
 
 https://github.com/user-attachments/assets/885264f4-1a8e-4ffc-b21c-2e695843ce48
 
-[Download the narrated video](docs/demo/Rulecraft-Real-AWS-Demo-Voiceover.mp4) · [Concise English script / 中文对照](docs/DEMO_NARRATION_SIMPLE_zh.md) · [Silent backup](docs/demo/Rulecraft-Real-AWS-Demo-Silent.mp4) · [Capture provenance and timestamps](reports/DEMO_CAPTURE.json) · [Voiceover provenance](reports/VOICEOVER_DELIVERY.json)
+[Download the narrated video](docs/demo/Rulecraft-Real-AWS-Demo-Voiceover.mp4) · [Concise English script](docs/DEMO_NARRATION_SIMPLE.md) · [Silent backup](docs/demo/Rulecraft-Real-AWS-Demo-Silent.mp4) · [Capture provenance and timestamps](reports/DEMO_CAPTURE.json) · [Voiceover provenance](reports/VOICEOVER_DELIVERY.json)
 
 The password and key-entry portions are paused and explicitly identified with title cards; no fake keys are entered for the recording. Only the actual browser page is captured. Real screenshot frames are sampled approximately twice per second and aspect-fitted to 1280×720; encoding duplicates frames to 20 fps. This is not a native desktop recording. Between-chapter preparation gaps are cut; asynchronous processing is not sped up. The owner supplied and approved the spoken narration. It was aligned locally with volume adjustment, without generated speech or voice-speed changes; the video stream remains byte-identical to the silent backup. The private original audio and automatic transcript are not committed. The video is not evidence of a million-row run or a full-day retention observation.
 

@@ -55,6 +55,7 @@ def main():
                 raise SystemExit("The genuine model did not become ready before the deadline.")
             time.sleep(1)
 
+    # Escaped source literals decode to the original Chinese prompts during inference.
     cases = [
         (
             "regex_replace",
@@ -65,8 +66,8 @@ def main():
         ),
         (
             "regex_replace",
-            "识别文本中的电子邮箱地址",
-            "用户 hello@example.com",
+            "\u8bc6\u522b\u6587\u672c\u4e2d\u7684\u7535\u5b50\u90ae\u7bb1\u5730\u5740",
+            "\u7528\u6237 hello@example.com",
             "hello@example.com",
             ["Text"],
         ),
@@ -103,7 +104,8 @@ def main():
         ),
         (
             "regex_extract",
-            "提取以 INV- 开头、后面紧跟一位或多位数字的发票编号",
+            "\u63d0\u53d6\u4ee5 INV- \u5f00\u5934\u3001\u540e\u9762\u7d27\u8ddf"
+            "\u4e00\u4f4d\u6216\u591a\u4f4d\u6570\u5b57\u7684\u53d1\u7968\u7f16\u53f7",
             "Invoice INV-42 sent",
             "INV-42",
             ["Description"],
